@@ -7,23 +7,24 @@ class Player(pygame.sprite.Sprite):
         super().__init__()
         
         # 加载精灵表并创建动画
-        idle_spritesheet = resource_manager.load_spritesheet('player', 'images/player/Knight_Idle.png')
-        run_spritesheet = resource_manager.load_spritesheet('player', 'images/player/Knight_Run.png')
-        hurt_spritesheet = resource_manager.load_spritesheet('player', 'images/player/Knight_Hit.png')
+        idle_spritesheet = resource_manager.load_spritesheet('player_idle_sprite', 'images/player/Ninja_frog_Idle_32x32.png')
+        run_spritesheet = resource_manager.load_spritesheet('player_run_sprite', 'images/player/Ninja_frog_Run_32x32.png')
+        hurt_spritesheet = resource_manager.load_spritesheet('player_hurt_sprite', 'images/player/Ninja_frog_Hit_32x32.png')
+        
         # 创建各种状态的动画
         self.animations = {
             'idle': resource_manager.create_animation('player_idle', idle_spritesheet, 
                                                     frame_width=32, frame_height=32,
-                                                    frame_count=10, row=0,
-                                                    frame_duration=0.1),
+                                                    frame_count=11, row=0,
+                                                    frame_duration=0.0333),
             'run': resource_manager.create_animation('player_run', run_spritesheet,
                                                    frame_width=32, frame_height=32,
-                                                   frame_count=10, row=0,
-                                                   frame_duration=0.1),
+                                                   frame_count=12, row=0,
+                                                   frame_duration=0.0333),
             'hurt': resource_manager.create_animation('player_hurt', hurt_spritesheet,
                                                     frame_width=32, frame_height=32,
-                                                    frame_count=1, row=0,
-                                                    frame_duration=0.1, loop=False)
+                                                    frame_count=7, row=0,
+                                                    frame_duration=0.0333)
         }
         
         # 设置当前动画
@@ -34,8 +35,8 @@ class Player(pygame.sprite.Sprite):
         self.rect.y = y
         
         # 世界坐标（游戏中的实际位置）
-        self.world_x = 0
-        self.world_y = 0
+        self.world_x = x
+        self.world_y = y
         
         # 玩家属性
         self.speed = 300
@@ -48,11 +49,11 @@ class Player(pygame.sprite.Sprite):
         self.velocity = pygame.math.Vector2()
         self.direction = pygame.math.Vector2()
         self.moving = {'up': False, 'down': False, 'left': False, 'right': False}
-        self.facing_right = True  # 添加朝向标记
+        self.facing_right = True
         
         # 受伤状态
         self.hurt_timer = 0
-        self.hurt_duration = 0.2  # 受伤动画持续时间
+        self.hurt_duration = 0.2
         
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN:
@@ -80,6 +81,7 @@ class Player(pygame.sprite.Sprite):
         # 更新方向向量
         self.direction.x = float(self.moving['right']) - float(self.moving['left'])
         self.direction.y = float(self.moving['down']) - float(self.moving['up'])
+        print(f"Direction: {self.direction}, Moving: {self.moving}")  # 添加调试输出
                 
     def update(self, dt):
         # 更新当前动画
@@ -98,14 +100,20 @@ class Player(pygame.sprite.Sprite):
         
         # 更新速度向量和动画状态
         if self.direction.length() > 0:
+            # 标准化方向向量
             self.direction = self.direction.normalize()
+            # 如果不在受伤状态且当前不是跑步动画，切换到跑步动画
             if self.hurt_timer <= 0 and self.current_animation != 'run':
+                print(f"切换到跑步动画 - Direction: {self.direction}")  # 添加调试输出
                 self.current_animation = 'run'
                 self.animations[self.current_animation].reset()
+        # 如果没有移动且不在受伤状态，切换到待机动画
         elif self.hurt_timer <= 0 and self.current_animation != 'idle':
+            print(f"切换到待机动画 - Direction: {self.direction}")  # 添加调试输出
             self.current_animation = 'idle'
             self.animations[self.current_animation].reset()
         
+        # 计算速度
         self.velocity = self.direction * self.speed
         
         # 更新世界坐标位置（实际位置）
@@ -120,6 +128,7 @@ class Player(pygame.sprite.Sprite):
             current_frame = pygame.transform.flip(current_frame, True, False)
             
         self.image = current_frame
+        # print(self.current_animation)
         
     def render(self, screen):
         screen.blit(self.image, self.rect)

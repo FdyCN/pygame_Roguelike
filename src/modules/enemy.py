@@ -7,24 +7,24 @@ class Enemy(pygame.sprite.Sprite):
         super().__init__()
         
         # 加载精灵表并创建动画
-        idle_spritesheet = resource_manager.load_spritesheet('enemy', 'images/enemy/Ghost_Idle.png')
-        walk_spritesheet = resource_manager.load_spritesheet('enemy', 'images/enemy/Ghost_Idle.png')
-        hurt_spritesheet = resource_manager.load_spritesheet('enemy', 'images/enemy/Ghost_Idle.png')
+        idle_spritesheet = resource_manager.load_spritesheet('enemy_idle_spritesheet', 'images/enemy/Ghost_Idle.png')
+        walk_spritesheet = resource_manager.load_spritesheet('enemy_walk_spritesheet', 'images/enemy/Ghost_Idle.png')
+        hurt_spritesheet = resource_manager.load_spritesheet('enemy_hurt_spritesheet', 'images/enemy/Ghost_Idle.png')
         
         # 创建各种状态的动画
         self.animations = {
             'idle': resource_manager.create_animation('enemy_idle', idle_spritesheet, 
                                                     frame_width=44, frame_height=30,
                                                     frame_count=10, row=0,
-                                                    frame_duration=0.0167),  # 约60 FPS (1/60≈0.0167)
+                                                    frame_duration=0.0333),  # 30 FPS
             'walk': resource_manager.create_animation('enemy_walk', walk_spritesheet,
                                                     frame_width=44, frame_height=30,
                                                     frame_count=10, row=0,
-                                                    frame_duration=0.0167),  # 约60 FPS
+                                                    frame_duration=0.0333),  # 30 FPS
             'hurt': resource_manager.create_animation('enemy_hurt', hurt_spritesheet,
                                                     frame_width=44, frame_height=30,
                                                     frame_count=10, row=0,
-                                                    frame_duration=0.0167),  # 约60 FPS
+                                                    frame_duration=0.0333),  # 30 FPS
         }
         
         # 设置当前动画

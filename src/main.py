@@ -13,7 +13,7 @@ def main():
     game = Game(screen)
     
     while game.running:
-        dt = clock.tick(60) / 1000.0  # 转换为秒
+        dt = clock.tick(30) / 1000.0  # 转换为秒
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
