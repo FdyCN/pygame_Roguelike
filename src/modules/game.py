@@ -4,12 +4,16 @@ from .enemy_manager import EnemyManager
 from .weapon_manager import WeaponManager
 from .ui import UI
 from .menu import PauseMenu
+from .resource_manager import resource_manager
 
 class Game:
     def __init__(self, screen):
         self.screen = screen
         self.running = True
         self.paused = False
+        
+        # 初始化资源
+        # self._init_resources()
         
         # 获取屏幕中心点
         self.screen_center_x = self.screen.get_width() // 2
@@ -38,6 +42,25 @@ class Game:
         self.score = 0
         self.level = 1
         
+        # 播放背景音乐
+        resource_manager.play_music("background", loops=-1)
+        
+    def _init_resources(self):
+        """初始化游戏所需的资源"""
+        # 加载背景音乐
+        resource_manager.load_music("background", "music/background.mp3")
+        
+        # 加载音效
+        resource_manager.load_sound("hit", "sounds/hit.wav")
+        resource_manager.load_sound("enemy_death", "sounds/enemy_death.wav")
+        resource_manager.load_sound("player_hurt", "sounds/player_hurt.wav")
+        resource_manager.load_sound("level_up", "sounds/level_up.wav")
+        
+        # 设置音量
+        resource_manager.set_music_volume(0.5)  # 背景音乐音量
+        for sound_name in ["hit", "enemy_death", "player_hurt", "level_up"]:
+            resource_manager.set_sound_volume(sound_name, 0.7)  # 音效音量
+        
     def handle_event(self, event):
         # 处理暂停菜单事件
         if self.paused:
@@ -61,6 +84,10 @@ class Game:
     def toggle_pause(self):
         self.paused = not self.paused
         self.pause_menu.toggle()
+        if self.paused:
+            resource_manager.pause_music()
+        else:
+            resource_manager.unpause_music()
         
     def restart(self):
         # 重置游戏状态
@@ -82,6 +109,9 @@ class Game:
         self.game_time = 0
         self.score = 0
         self.level = 1
+        
+        # 重新播放背景音乐
+        resource_manager.play_music("background", loops=-1)
         
     def update(self, dt):
         # 如果游戏暂停，不更新游戏状态
@@ -155,9 +185,13 @@ class Game:
                 
                 if distance < enemy.rect.width / 2 + weapon.rect.width / 2:
                     enemy.take_damage(weapon.damage)
+                    # 播放击中音效
+                    resource_manager.play_sound("hit")
                     if enemy.health <= 0:
                         self.score += enemy.score_value
                         self.enemy_manager.remove_enemy(enemy)
+                        # 播放敌人死亡音效
+                        resource_manager.play_sound("enemy_death")
         
         # 检测玩家和敌人的碰撞
         for enemy in self.enemy_manager.enemies:
@@ -169,8 +203,18 @@ class Game:
             if distance < enemy.rect.width / 2 + self.player.rect.width / 2:
                 # 敌人攻击玩家
                 enemy.attack_player(self.player)
+                # 播放玩家受伤音效
+                resource_manager.play_sound("player_hurt")
                 
     def _update_game_state(self):
-        # 根据游戏时间更新难度
-        self.level = int(self.game_time // 60) + 1  # 每60秒提升一级
+        # 获取当前等级
+        current_level = int(self.game_time // 60) + 1  # 每60秒提升一级
+        
+        # 如果等级提升了
+        if current_level > self.level:
+            # 播放升级音效
+            resource_manager.play_sound("level_up")
+            
+        # 更新等级和难度
+        self.level = current_level
         self.enemy_manager.difficulty = self.level 

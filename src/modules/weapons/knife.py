@@ -1,12 +1,14 @@
 import pygame
 import math
+from ..resource_manager import resource_manager
 
 class Knife(pygame.sprite.Sprite):
     def __init__(self, player):
         super().__init__()
         self.player = player
-        self.image = pygame.Surface([20, 4])
-        self.image.fill((200, 200, 200))  # 临时用灰色矩形表示刀
+        
+        # 加载武器图像
+        self.image = resource_manager.load_image('weapon_knife', 'images/weapons/knife.png')
         self.rect = self.image.get_rect()
         
         # 武器属性
@@ -24,12 +26,17 @@ class Knife(pygame.sprite.Sprite):
         self.offset_x = 0
         self.offset_y = 0
         
+        # 加载攻击音效
+        resource_manager.load_sound('knife_swing', 'sounds/weapons/knife_swing.wav')
+        
     def update(self, dt):
         self.attack_timer += dt
         
         if self.attack_timer >= self.attack_interval:
             self.attack_timer = 0
             self.angle = (self.angle + 45) % 360  # 旋转45度
+            # 播放挥舞音效
+            resource_manager.play_sound('knife_swing')
             
         # 更新相对于玩家的偏移量（世界坐标系）
         angle_rad = math.radians(self.angle)

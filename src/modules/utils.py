@@ -27,7 +27,7 @@ class FontManager:
             # Linux 中文字体
             "/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf",
         ]
-        
+
         for font in possible_fonts:
             if os.path.exists(font):
                 font_path = font
@@ -42,3 +42,32 @@ class FontManager:
         except:
             # 如果出错，回退到默认字体
             return pygame.font.Font(None, size) 
+    
+
+def create_default_knife_image():
+    """
+    创建一个默认的像素风格刀具图案
+    返回: 保存的文件路径
+    """
+    # 创建一个32x32的surface
+    surface = pygame.Surface((32, 32), pygame.SRCALPHA)
+    
+    # 定义刀具的颜色
+    blade_color = (192, 192, 192)  # 银色
+    handle_color = (139, 69, 19)   # 棕色
+    
+    # 绘制刀刃（一个简单的三角形）
+    blade_points = [(16, 4), (20, 12), (12, 12)]
+    pygame.draw.polygon(surface, blade_color, blade_points)
+    
+    # 绘制刀柄
+    pygame.draw.rect(surface, handle_color, (14, 12, 4, 16))
+    
+    # 确保目录存在
+    os.makedirs('assets/images/weapons', exist_ok=True)
+    
+    # 保存图像
+    file_path = 'assets/images/weapons/knife.png'
+    pygame.image.save(surface, file_path)
+    
+    return file_path 
