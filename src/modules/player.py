@@ -55,6 +55,14 @@ class Player(pygame.sprite.Sprite):
         self.hurt_timer = 0
         self.hurt_duration = 0.2
         
+        # 无敌时间相关
+        self.invincible = False
+        self.invincible_timer = 0
+        self.invincible_duration = 2.0  # 无敌时间持续2秒
+        self.blink_interval = 0.1  # 闪烁间隔
+        self.blink_timer = 0
+        self.visible = True  # 控制闪烁显示
+        
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_w:
@@ -98,18 +106,31 @@ class Player(pygame.sprite.Sprite):
                     self.current_animation = 'idle'
                 self.animations[self.current_animation].reset()
         
+        # 更新无敌时间
+        if self.invincible:
+            self.invincible_timer -= dt
+            self.blink_timer -= dt
+            
+            # 更新闪烁效果
+            if self.blink_timer <= 0:
+                self.visible = not self.visible
+                self.blink_timer = self.blink_interval
+            
+            # 无敌时间结束
+            if self.invincible_timer <= 0:
+                self.invincible = False
+                self.visible = True
+        
         # 更新速度向量和动画状态
         if self.direction.length() > 0:
             # 标准化方向向量
             self.direction = self.direction.normalize()
             # 如果不在受伤状态且当前不是跑步动画，切换到跑步动画
             if self.hurt_timer <= 0 and self.current_animation != 'run':
-                print(f"切换到跑步动画 - Direction: {self.direction}")  # 添加调试输出
                 self.current_animation = 'run'
                 self.animations[self.current_animation].reset()
         # 如果没有移动且不在受伤状态，切换到待机动画
         elif self.hurt_timer <= 0 and self.current_animation != 'idle':
-            print(f"切换到待机动画 - Direction: {self.direction}")  # 添加调试输出
             self.current_animation = 'idle'
             self.animations[self.current_animation].reset()
         
@@ -131,7 +152,9 @@ class Player(pygame.sprite.Sprite):
         # print(self.current_animation)
         
     def render(self, screen):
-        screen.blit(self.image, self.rect)
+        # 如果在无敌状态且当前应该隐藏，则不渲染玩家
+        if not self.invincible or self.visible:
+            screen.blit(self.image, self.rect)
         
         # 绘制血条
         health_bar_width = 32
@@ -146,6 +169,10 @@ class Player(pygame.sprite.Sprite):
                          health_bar_width * health_ratio, health_bar_height))
         
     def take_damage(self, amount):
+        # 如果处于无敌状态，不受伤害
+        if self.invincible:
+            return False
+            
         self.health -= amount
         if self.health <= 0:
             self.health = 0
@@ -156,6 +183,14 @@ class Player(pygame.sprite.Sprite):
             self.animations[self.current_animation].reset()
             self.hurt_timer = self.hurt_duration
             
+            # 激活无敌时间
+            self.invincible = True
+            self.invincible_timer = self.invincible_duration
+            self.blink_timer = self.blink_interval
+            self.visible = True
+            
+        return True
+        
     def heal(self, amount):
         self.health = min(self.health + amount, self.max_health)
         

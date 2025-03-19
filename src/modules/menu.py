@@ -116,4 +116,87 @@ class PauseMenu:
         elif self.exit_button.is_clicked(event):
             return "exit"
             
+        return None
+
+class GameOverMenu:
+    def __init__(self, screen):
+        self.screen = screen
+        self.is_active = False
+        
+        # 创建半透明背景
+        self.overlay = pygame.Surface((screen.get_width(), screen.get_height()), pygame.SRCALPHA)
+        self.overlay.fill((0, 0, 0, 180))  # 黑色半透明
+        
+        # 创建菜单面板
+        panel_width = 400
+        panel_height = 300
+        panel_x = (screen.get_width() - panel_width) // 2
+        panel_y = (screen.get_height() - panel_height) // 2
+        self.panel_rect = pygame.Rect(panel_x, panel_y, panel_width, panel_height)
+        
+        # 创建字体
+        self.title_font = FontManager.get_font(48)
+        self.button_font = FontManager.get_font(36)
+        
+        # 创建标题
+        self.title_text = self.title_font.render("游戏结束", True, (255, 255, 255))
+        self.title_rect = self.title_text.get_rect(center=(screen.get_width() // 2, panel_y + 50))
+        
+        # 创建按钮
+        button_width = 200
+        button_height = 50
+        button_x = panel_x + (panel_width - button_width) // 2
+        
+        self.restart_button = Button(
+            button_x, panel_y + 120, 
+            button_width, button_height, 
+            "重新开始", self.button_font
+        )
+        
+        self.exit_button = Button(
+            button_x, panel_y + 180, 
+            button_width, button_height, 
+            "退出游戏", self.button_font
+        )
+        
+    def show(self):
+        self.is_active = True
+        
+    def hide(self):
+        self.is_active = False
+        
+    def update(self, mouse_pos):
+        if not self.is_active:
+            return
+            
+        self.restart_button.update(mouse_pos)
+        self.exit_button.update(mouse_pos)
+        
+    def render(self):
+        if not self.is_active:
+            return
+            
+        # 绘制半透明背景
+        self.screen.blit(self.overlay, (0, 0))
+        
+        # 绘制菜单面板
+        pygame.draw.rect(self.screen, (30, 30, 30), self.panel_rect, 0, 15)
+        pygame.draw.rect(self.screen, (100, 100, 100), self.panel_rect, 3, 15)
+        
+        # 绘制标题
+        self.screen.blit(self.title_text, self.title_rect)
+        
+        # 绘制按钮
+        self.restart_button.render(self.screen)
+        self.exit_button.render(self.screen)
+        
+    def handle_event(self, event):
+        if not self.is_active:
+            return None
+            
+        if self.restart_button.is_clicked(event):
+            return "restart"
+        elif self.exit_button.is_clicked(event):
+            return "exit"
+            
         return None 

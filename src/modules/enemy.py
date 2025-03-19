@@ -136,8 +136,13 @@ class Enemy(pygame.sprite.Sprite):
         self.hurt_timer = self.hurt_duration
         
     def attack_player(self, player):
-        # 检查敌人与玩家是否碰撞
-        if pygame.sprite.collide_rect(self, player):
+        # 计算与玩家的距离（使用世界坐标）
+        dx = self.rect.x - player.world_x
+        dy = self.rect.y - player.world_y
+        distance = (dx**2 + dy**2)**0.5
+        
+        # 如果在攻击范围内
+        if distance < self.rect.width / 2 + player.rect.width / 2:
             player.take_damage(self.damage)
             return True
         return False

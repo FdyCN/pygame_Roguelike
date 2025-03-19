@@ -3,7 +3,7 @@ from .player import Player
 from .enemy_manager import EnemyManager
 from .weapon_manager import WeaponManager
 from .ui import UI
-from .menu import PauseMenu
+from .menu import PauseMenu, GameOverMenu
 from .resource_manager import resource_manager
 
 class Game:
@@ -11,6 +11,7 @@ class Game:
         self.screen = screen
         self.running = True
         self.paused = False
+        self.game_over = False
         
         # 初始化资源
         # self._init_resources()
@@ -34,8 +35,9 @@ class Game:
         self.weapon_manager = WeaponManager(self.player)
         self.ui = UI(screen)
         
-        # 创建暂停菜单
+        # 创建菜单
         self.pause_menu = PauseMenu(screen)
+        self.game_over_menu = GameOverMenu(screen)
         
         # 游戏状态
         self.game_time = 0
@@ -62,6 +64,15 @@ class Game:
             resource_manager.set_sound_volume(sound_name, 0.7)  # 音效音量
         
     def handle_event(self, event):
+        # 处理游戏结束菜单事件
+        if self.game_over:
+            action = self.game_over_menu.handle_event(event)
+            if action == "restart":
+                self.restart()
+            elif action == "exit":
+                self.running = False
+            return
+            
         # 处理暂停菜单事件
         if self.paused:
             action = self.pause_menu.handle_event(event)
@@ -92,7 +103,9 @@ class Game:
     def restart(self):
         # 重置游戏状态
         self.paused = False
+        self.game_over = False
         self.pause_menu.is_active = False
+        self.game_over_menu.hide()
         
         # 重置玩家
         self.player = Player(self.screen_center_x, self.screen_center_y)
@@ -114,7 +127,11 @@ class Game:
         resource_manager.play_music("background", loops=-1)
         
     def update(self, dt):
-        # 如果游戏暂停，不更新游戏状态
+        # 如果游戏结束或暂停，只更新菜单
+        if self.game_over:
+            self.game_over_menu.update(pygame.mouse.get_pos())
+            return
+            
         if self.paused:
             self.pause_menu.update(pygame.mouse.get_pos())
             return
@@ -123,6 +140,12 @@ class Game:
         
         # 更新玩家位置（在世界坐标系中）
         self.player.update(dt)
+        
+        # 检查玩家是否死亡
+        if self.player.health <= 0 and not self.game_over:
+            self.game_over = True
+            self.game_over_menu.show()
+            return
         
         # 更新相机位置（跟随玩家）
         self.camera_x = self.player.world_x
@@ -158,6 +181,10 @@ class Game:
         # 如果游戏暂停，渲染暂停菜单
         if self.paused:
             self.pause_menu.render()
+            
+        # 如果游戏结束，渲染游戏结束菜单
+        if self.game_over:
+            self.game_over_menu.render()
         
     def _draw_grid(self):
         # 计算网格偏移量（基于相机位置）
@@ -201,11 +228,11 @@ class Game:
             distance = (dx**2 + dy**2)**0.5
             
             if distance < enemy.rect.width / 2 + self.player.rect.width / 2:
-                # 敌人攻击玩家
-                enemy.attack_player(self.player)
-                # 播放玩家受伤音效
-                resource_manager.play_sound("player_hurt")
-                
+                # 敌人攻击玩家，只有当攻击成功时才播放音效
+                if enemy.attack_player(self.player):
+                    # 播放玩家受伤音效
+                    resource_manager.play_sound("player_hurt")
+        
     def _update_game_state(self):
         # 获取当前等级
         current_level = int(self.game_time // 60) + 1  # 每60秒提升一级
