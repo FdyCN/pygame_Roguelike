@@ -1,6 +1,6 @@
 import pygame
 import math
-from .resource_manager import resource_manager
+from ..resource_manager import resource_manager
 
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, x, y, health, damage, speed):

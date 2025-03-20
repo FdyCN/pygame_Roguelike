@@ -1,5 +1,5 @@
 import pygame
-from .resource_manager import resource_manager
+from ..resource_manager import resource_manager
 
 class Item(pygame.sprite.Sprite):
     def __init__(self, x, y, item_type):

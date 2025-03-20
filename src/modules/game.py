@@ -1,8 +1,8 @@
 import pygame
 from .player import Player
-from .enemy_manager import EnemyManager
+from .enemies.enemy_manager import EnemyManager
 from .weapons.weapon_manager import WeaponManager
-from .item_manager import ItemManager
+from .items.item_manager import ItemManager
 from .ui import UI
 from .menu import PauseMenu, GameOverMenu, UpgradeMenu
 from .resource_manager import resource_manager
