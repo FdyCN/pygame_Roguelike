@@ -6,6 +6,7 @@ class Knife(pygame.sprite.Sprite):
     def __init__(self, player):
         super().__init__()
         self.player = player
+        self.type = 'knife'
         
         # 加载武器图像
         self.image = resource_manager.load_image('weapon_knife', 'images/weapons/knife.png')

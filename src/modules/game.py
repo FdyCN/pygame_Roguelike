@@ -1,9 +1,10 @@
 import pygame
 from .player import Player
 from .enemy_manager import EnemyManager
-from .weapon_manager import WeaponManager
+from .weapons.weapon_manager import WeaponManager
+from .item_manager import ItemManager
 from .ui import UI
-from .menu import PauseMenu, GameOverMenu
+from .menu import PauseMenu, GameOverMenu, UpgradeMenu
 from .resource_manager import resource_manager
 
 class Game:
@@ -14,7 +15,7 @@ class Game:
         self.game_over = False
         
         # 初始化资源
-        # self._init_resources()
+        self._init_resources()
         
         # 获取屏幕中心点
         self.screen_center_x = self.screen.get_width() // 2
@@ -33,11 +34,13 @@ class Game:
         
         self.enemy_manager = EnemyManager()
         self.weapon_manager = WeaponManager(self.player)
+        self.item_manager = ItemManager()
         self.ui = UI(screen)
         
         # 创建菜单
         self.pause_menu = PauseMenu(screen)
         self.game_over_menu = GameOverMenu(screen)
+        self.upgrade_menu = UpgradeMenu(screen)  # 添加升级菜单
         
         # 游戏状态
         self.game_time = 0
@@ -57,10 +60,15 @@ class Game:
         resource_manager.load_sound("enemy_death", "sounds/enemy_death.wav")
         resource_manager.load_sound("player_hurt", "sounds/player_hurt.wav")
         resource_manager.load_sound("level_up", "sounds/level_up.wav")
+        resource_manager.load_sound("collect_exp", "sounds/collect_exp.wav")
+        resource_manager.load_sound("collect_coin", "sounds/collect_coin.wav")
+        resource_manager.load_sound("heal", "sounds/heal.wav")
+        resource_manager.load_sound("upgrade", "sounds/upgrade.wav")  # 添加升级选择音效
         
         # 设置音量
         resource_manager.set_music_volume(0.5)  # 背景音乐音量
-        for sound_name in ["hit", "enemy_death", "player_hurt", "level_up"]:
+        for sound_name in ["hit", "enemy_death", "player_hurt", "level_up", 
+                          "collect_exp", "collect_coin", "heal", "upgrade"]:
             resource_manager.set_sound_volume(sound_name, 0.7)  # 音效音量
         
     def handle_event(self, event):
@@ -71,6 +79,14 @@ class Game:
                 self.restart()
             elif action == "exit":
                 self.running = False
+            return
+            
+        # 处理升级菜单事件
+        if self.upgrade_menu.is_active:
+            selected_upgrade = self.upgrade_menu.handle_event(event)
+            if selected_upgrade:
+                self.player.apply_upgrade(selected_upgrade)
+                resource_manager.play_sound("upgrade")
             return
             
         # 处理暂停菜单事件
@@ -93,11 +109,13 @@ class Game:
         self.player.handle_event(event)
         
     def toggle_pause(self):
+        """切换游戏暂停状态"""
         self.paused = not self.paused
-        self.pause_menu.toggle()
         if self.paused:
+            self.pause_menu.show()
             resource_manager.pause_music()
         else:
+            self.pause_menu.hide()
             resource_manager.unpause_music()
         
     def restart(self):
@@ -117,6 +135,7 @@ class Game:
         # 重置敌人和武器
         self.enemy_manager = EnemyManager()
         self.weapon_manager = WeaponManager(self.player)
+        self.item_manager = ItemManager()
         
         # 重置游戏状态
         self.game_time = 0
@@ -127,13 +146,12 @@ class Game:
         resource_manager.play_music("background", loops=-1)
         
     def update(self, dt):
-        # 如果游戏结束或暂停，只更新菜单
+        # 如果游戏结束或暂停或正在选择升级，只更新菜单
         if self.game_over:
             self.game_over_menu.update(pygame.mouse.get_pos())
             return
             
-        if self.paused:
-            self.pause_menu.update(pygame.mouse.get_pos())
+        if self.paused or self.upgrade_menu.is_active:
             return
             
         self.game_time += dt
@@ -154,12 +172,15 @@ class Game:
         # 更新其他游戏对象
         self.enemy_manager.update(dt, self.player)
         self.weapon_manager.update(dt)
+        self.item_manager.update(dt, self.player)
         
         # 检测碰撞
         self._check_collisions()
         
-        # 更新游戏状态
-        self._update_game_state()
+        # 检查是否升级
+        if self.player.add_experience(0):  # 检查是否可以升级，不添加经验值
+            self.player.level_up()
+            self.upgrade_menu.show(self.player)  # 显示升级选择菜单
         
     def render(self):
         # 清空屏幕
@@ -169,18 +190,26 @@ class Game:
         self._draw_grid()
         
         # 渲染游戏对象（考虑相机偏移）
-        self.enemy_manager.render(self.screen, self.camera_x, self.camera_y, self.screen_center_x, self.screen_center_y)
-        self.weapon_manager.render(self.screen, self.camera_x, self.camera_y, self.screen_center_x, self.screen_center_y)
+        self.enemy_manager.render(self.screen, self.camera_x, self.camera_y, 
+                                self.screen_center_x, self.screen_center_y)
+        self.weapon_manager.render(self.screen, self.camera_x, self.camera_y, 
+                                 self.screen_center_x, self.screen_center_y)
+        self.item_manager.render(self.screen, self.camera_x, self.camera_y, 
+                               self.screen_center_x, self.screen_center_y)
         
         # 渲染玩家（始终在屏幕中心）
         self.player.render(self.screen)
         
         # 渲染UI
-        self.ui.render(self.score, self.level, self.player.health)
+        self.ui.render(self.player)
         
         # 如果游戏暂停，渲染暂停菜单
         if self.paused:
             self.pause_menu.render()
+            
+        # 如果正在选择升级，渲染升级菜单
+        if self.upgrade_menu.is_active:
+            self.upgrade_menu.render()
             
         # 如果游戏结束，渲染游戏结束菜单
         if self.game_over:
@@ -216,6 +245,8 @@ class Game:
                     resource_manager.play_sound("hit")
                     if enemy.health <= 0:
                         self.score += enemy.score_value
+                        # 在敌人死亡位置生成物品
+                        self.item_manager.spawn_item(enemy.rect.x, enemy.rect.y, enemy.type)
                         self.enemy_manager.remove_enemy(enemy)
                         # 播放敌人死亡音效
                         resource_manager.play_sound("enemy_death")

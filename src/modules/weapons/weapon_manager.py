@@ -1,5 +1,5 @@
 import pygame
-from .weapons.knife import Knife
+from .knife import Knife
 
 class WeaponManager:
     def __init__(self, player):
@@ -11,6 +11,8 @@ class WeaponManager:
         
         # 初始武器
         self.add_weapon('knife')
+        # 将武器添加到玩家的武器列表中
+        self.player.weapons = self.weapons
         
     def update(self, dt):
         for weapon in self.weapons[:]:

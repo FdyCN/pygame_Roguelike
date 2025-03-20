@@ -1,6 +1,8 @@
 import pygame
 import math
 from .resource_manager import resource_manager
+from .weapons.knife import Knife
+from .upgrade_system import UpgradeType
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, x, y):
@@ -31,19 +33,40 @@ class Player(pygame.sprite.Sprite):
         self.current_animation = 'idle'
         self.image = self.animations[self.current_animation].get_current_frame()
         self.rect = self.image.get_rect()
-        self.rect.x = x
-        self.rect.y = y
+        self.rect.center = (x, y)
         
-        # 世界坐标（游戏中的实际位置）
+        # 世界坐标
         self.world_x = x
         self.world_y = y
         
-        # 玩家属性
-        self.speed = 300
-        self.max_health = 100
+        # 基础属性
+        self.base_max_health = 100
+        self.base_speed = 200
+        self.base_exp_multiplier = 1.0
+        
+        # 当前属性（包含被动加成）
+        self.max_health = self.base_max_health
         self.health = self.max_health
+        self.speed = self.base_speed
+        self.exp_multiplier = self.base_exp_multiplier
+        
+        # 等级和经验值
         self.level = 1
         self.experience = 0
+        self.exp_to_next_level = 100
+        
+        # 金币
+        self.coins = 0
+        
+        # 武器列表
+        self.weapons = []  # 武器将由WeaponManager管理
+        
+        # 被动效果
+        self.passive_effects = {
+            'max_health': 0,  # 额外生命值
+            'speed': 0,       # 速度加成（百分比）
+            'exp_gain': 0,    # 经验获取加成（百分比）
+        }
         
         # 移动相关
         self.velocity = pygame.math.Vector2()
@@ -89,7 +112,6 @@ class Player(pygame.sprite.Sprite):
         # 更新方向向量
         self.direction.x = float(self.moving['right']) - float(self.moving['left'])
         self.direction.y = float(self.moving['down']) - float(self.moving['up'])
-        print(f"Direction: {self.direction}, Moving: {self.moving}")  # 添加调试输出
                 
     def update(self, dt):
         # 更新当前动画
@@ -173,7 +195,7 @@ class Player(pygame.sprite.Sprite):
         if self.invincible:
             return False
             
-        self.health -= amount
+        self.health = max(0, self.health - amount)
         if self.health <= 0:
             self.health = 0
             # 处理玩家死亡
@@ -193,16 +215,64 @@ class Player(pygame.sprite.Sprite):
         
     def heal(self, amount):
         self.health = min(self.health + amount, self.max_health)
+        return True
         
     def add_experience(self, amount):
-        self.experience += amount
-        # 检查是否升级
-        if self.experience >= self.level * 100:  # 简单的升级公式
-            self.level_up()
-            
+        """添加经验值并检查是否升级"""
+        self.experience += amount * (1 + self.exp_multiplier)
+        return self.experience >= self.exp_to_next_level
+        
     def level_up(self):
+        """升级处理"""
         self.level += 1
-        self.experience = 0
-        self.max_health += 10
-        self.health = self.max_health
-        self.speed += 10 
+        self.experience -= self.exp_to_next_level
+        self.exp_to_next_level = int(self.exp_to_next_level * 1.2)  # 每级所需经验值增加20%
+        # 移除自动增加属性的代码，改为只播放音效
+        resource_manager.play_sound("level_up")
+        return True
+        
+    def apply_upgrade(self, upgrade):
+        """应用升级效果"""
+        if upgrade.upgrade_type == UpgradeType.WEAPON:
+            weapon_class = None
+            if upgrade.weapon_type == "knife":
+                weapon_class = Knife
+            # 这里可以继续添加其他武器类型的判断
+            
+            if weapon_class:
+                if upgrade.weapon_type in [w.type for w in self.weapons]:
+                    # 升级现有武器
+                    for weapon in self.weapons:
+                        if weapon.type == upgrade.weapon_type:
+                            weapon.upgrade(upgrade.damage, upgrade.cooldown)
+                else:
+                    # 添加新武器
+                    if len(self.weapons) < 6:
+                        new_weapon = weapon_class()
+                        self.weapons.append(new_weapon)
+        
+        elif upgrade.upgrade_type == UpgradeType.PASSIVE:
+            # 应用被动效果
+            self.passive_effects[upgrade.stat_type] += upgrade.effect_value
+            self._update_stats()
+            
+    def _update_stats(self):
+        """更新所有属性（包含被动加成）"""
+        # 更新最大生命值
+        old_max_health = self.max_health
+        self.max_health = self.base_max_health + self.passive_effects['max_health']
+        # 如果最大生命值增加，当前生命值也相应增加
+        if self.max_health > old_max_health:
+            self.health += (self.max_health - old_max_health)
+        
+        # 更新速度（基础速度 * (1 + 速度加成百分比)）
+        self.speed = self.base_speed * (1 + self.passive_effects['speed'])
+        
+        # 更新经验获取倍率
+        self.exp_multiplier = self.base_exp_multiplier + self.passive_effects['exp_gain']
+        
+    def add_coins(self, amount):
+        """添加金币"""
+        self.coins += amount
+        # 播放收集金币音效
+        resource_manager.play_sound("collect_coin") 

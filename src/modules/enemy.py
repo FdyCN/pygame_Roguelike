@@ -6,6 +6,9 @@ class Enemy(pygame.sprite.Sprite):
     def __init__(self, x, y, health, damage, speed):
         super().__init__()
         
+        # 敌人类型
+        self.type = 'ghost'  # 默认类型
+        
         # 加载精灵表并创建动画
         idle_spritesheet = resource_manager.load_spritesheet('enemy_idle_spritesheet', 'images/enemy/Ghost_Idle.png')
         walk_spritesheet = resource_manager.load_spritesheet('enemy_walk_spritesheet', 'images/enemy/Ghost_Idle.png')
