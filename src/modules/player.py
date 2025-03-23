@@ -66,6 +66,7 @@ class Player(pygame.sprite.Sprite):
             'max_health': 0,  # 额外生命值
             'speed': 0,       # 速度加成（百分比）
             'exp_gain': 0,    # 经验获取加成（百分比）
+            'coin_gain': 0,    # 经验获取加成（百分比）
         }
         
         # 移动相关
@@ -244,7 +245,7 @@ class Player(pygame.sprite.Sprite):
                     # 升级现有武器
                     for weapon in self.weapons:
                         if weapon.type == upgrade.weapon_type:
-                            weapon.upgrade(upgrade.damage, upgrade.cooldown)
+                            weapon.upgrade(upgrade)
                 else:
                     # 添加新武器
                     if len(self.weapons) < 6:

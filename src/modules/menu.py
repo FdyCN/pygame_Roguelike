@@ -1,6 +1,7 @@
 import pygame
 from .utils import FontManager
 from .upgrade_system import UpgradeManager, UpgradeType
+from .resource_manager import resource_manager
 
 class Button:
     def __init__(self, x, y, width, height, text, font, color=(200, 200, 200), hover_color=(255, 255, 255)):
@@ -80,7 +81,7 @@ class Menu:
 class PauseMenu(Menu):
     def __init__(self, screen):
         super().__init__(screen)
-        self.options = ["继续游戏", "重新开始", "退出游戏"]
+        self.options = ["继续游戏", "保存游戏", "重新开始", "返回主菜单", "退出游戏"]
         self.selected_index = 0
         self.option_rects = []  # 存储选项的矩形区域
         
@@ -92,9 +93,12 @@ class PauseMenu(Menu):
         if event.type == pygame.KEYDOWN:
             if event.key in [pygame.K_UP, pygame.K_w]:
                 self.selected_index = (self.selected_index - 1) % len(self.options)
+                resource_manager.play_sound("menu_move")
             elif event.key in [pygame.K_DOWN, pygame.K_s]:
                 self.selected_index = (self.selected_index + 1) % len(self.options)
+                resource_manager.play_sound("menu_move")
             elif event.key in [pygame.K_RETURN, pygame.K_SPACE]:
+                resource_manager.play_sound("menu_select")
                 return self._handle_selection(self.selected_index)
                 
         # 鼠标控制
@@ -102,6 +106,7 @@ class PauseMenu(Menu):
             mouse_pos = pygame.mouse.get_pos()
             for i, rect in enumerate(self.option_rects):
                 if rect.collidepoint(mouse_pos):
+                    resource_manager.play_sound("menu_select")
                     return self._handle_selection(i)
                     
         # 更新鼠标悬停状态
@@ -109,19 +114,25 @@ class PauseMenu(Menu):
             mouse_pos = pygame.mouse.get_pos()
             for i, rect in enumerate(self.option_rects):
                 if rect.collidepoint(mouse_pos):
-                    self.selected_index = i
+                    if self.selected_index != i:
+                        self.selected_index = i
+                        resource_manager.play_sound("menu_move")
                     break
                     
         return None
         
     def _handle_selection(self, index):
         """处理选项选择"""
-        if index == 0:
+        if index == 0:  # 继续游戏
             self.hide()
             return "continue"
-        elif index == 1:
+        elif index == 1:  # 保存游戏
+            return "save"
+        elif index == 2:  # 重新开始
             return "restart"
-        elif index == 2:
+        elif index == 3:  # 返回主菜单
+            return "main_menu"
+        elif index == 4:  # 退出游戏
             return "exit"
         return None
         
@@ -237,6 +248,7 @@ class UpgradeMenu(Menu):
         self.selected_index = 0
         self.upgrade_manager = UpgradeManager()
         self.option_rects = []
+        self.player = None
         
         # 修改菜单样式
         self.width = 800
@@ -249,9 +261,26 @@ class UpgradeMenu(Menu):
         self.passive_color = (100, 255, 100)  # 绿色
         
     def show(self, player):
+        """显示升级菜单并重置玩家移动状态"""
         self.is_active = True
+        self.player = player
+        # 重置玩家的移动状态
+        self.player.moving = {'up': False, 'down': False, 'left': False, 'right': False}
+        self.player.direction.x = 0
+        self.player.direction.y = 0
+        
+        # 获取可用的升级选项
         self.options = self.upgrade_manager.get_random_upgrades(player)
         self.selected_index = 0
+        
+    def hide(self):
+        """隐藏菜单"""
+        super().hide()
+        if self.player:
+            # 确保在关闭菜单时重置移动状态
+            self.player.moving = {'up': False, 'down': False, 'left': False, 'right': False}
+            self.player.direction.x = 0
+            self.player.direction.y = 0
         
     def handle_event(self, event):
         if not self.is_active:

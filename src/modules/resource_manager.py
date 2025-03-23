@@ -315,5 +315,29 @@ class ResourceManager:
         self.fonts.clear()
         self.animations.clear()
 
+    def _init_resources(self):
+        """初始化游戏所需的资源"""
+        # 加载背景音乐
+        self.load_music("background", "music/background.mp3")
+        
+        # 加载音效
+        self.load_sound("hit", "sounds/hit.wav")
+        self.load_sound("enemy_death", "sounds/enemy_death.wav")
+        self.load_sound("player_hurt", "sounds/player_hurt.wav")
+        self.load_sound("level_up", "sounds/level_up.wav")
+        self.load_sound("collect_exp", "sounds/collect_exp.wav")
+        self.load_sound("collect_coin", "sounds/collect_coin.wav")
+        self.load_sound("heal", "sounds/heal.wav")
+        self.load_sound("upgrade", "sounds/upgrade.wav")
+        self.load_sound("menu_move", "sounds/menu_move.wav")
+        self.load_sound("menu_select", "sounds/menu_select.wav")
+        
+        # 设置音量
+        self.set_music_volume(0.5)  # 背景音乐音量
+        for sound_name in ["hit", "enemy_death", "player_hurt", "level_up", 
+                          "collect_exp", "collect_coin", "heal", "upgrade",
+                          "menu_move", "menu_select"]:
+            self.set_sound_volume(sound_name, 0.7)  # 音效音量
+
 # 创建全局资源管理器实例
 resource_manager = ResourceManager() 
