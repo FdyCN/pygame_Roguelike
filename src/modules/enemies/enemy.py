@@ -35,12 +35,24 @@ class Enemy(pygame.sprite.Sprite, ABC):
         # 朝向
         self.facing_right = True
         
+        # 无敌时间相关
+        self.invincible = False
+        self.invincible_timer = 0
+        self.invincible_duration = 0.15  # 受伤后的无敌时间（秒）
+        
     @abstractmethod
     def load_animations(self):
         """加载敌人的动画，子类必须实现"""
         pass
         
     def update(self, dt, player):
+        # 更新无敌状态
+        if self.invincible:
+            self.invincible_timer -= dt
+            if self.invincible_timer <= 0:
+                self.invincible = False
+                self.invincible_timer = 0
+        
         # 更新当前动画
         if self.current_animation in self.animations:
             self.animations[self.current_animation].update(dt)
@@ -116,7 +128,7 @@ class Enemy(pygame.sprite.Sprite, ABC):
             screen.blit(self.image, draw_rect)
         
         # 绘制血条
-        health_bar_width = 32 * self.scale  # 血条也要相应缩放
+        health_bar_width = 32 * self.scale
         health_bar_height = 5 * self.scale
         health_ratio = self.health / self.max_health
         
@@ -132,13 +144,35 @@ class Enemy(pygame.sprite.Sprite, ABC):
                          health_bar_width * health_ratio, health_bar_height))
         
     def take_damage(self, amount):
-        """受到伤害"""
+        """受到伤害
+        
+        Args:
+            amount: 伤害值
+            
+        Returns:
+            bool: 是否实际造成了伤害
+        """
+        # 如果处于无敌状态，不造成伤害
+        if self.invincible:
+            return False
+            
+        # 造成伤害
         self.health -= amount
+        
+        # 进入无敌状态
+        self.invincible = True
+        self.invincible_timer = self.invincible_duration
+        
         # 切换到受伤动画
         self.current_animation = 'hurt'
         if self.current_animation in self.animations:
             self.animations[self.current_animation].reset()
         self.hurt_timer = self.hurt_duration
+        
+        # 播放受伤音效
+        resource_manager.play_sound("enemy_hit")
+        
+        return True
         
     def attack_player(self, player):
         """攻击玩家"""

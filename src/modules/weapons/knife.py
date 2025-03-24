@@ -33,6 +33,23 @@ class ThrownKnife(pygame.sprite.Sprite):
         # 存活时间（3秒后消失）
         self.lifetime = 3.0
         
+        # 记录已经击中的敌人
+        self.hit_enemies = set()
+        
+    def can_damage_enemy(self, enemy):
+        """检查是否可以对敌人造成伤害"""
+        # 如果敌人已经被击中过，且武器不能穿透，返回False
+        if enemy in self.hit_enemies:
+            return False
+        return True
+        
+    def register_hit(self, enemy):
+        """记录对敌人的命中"""
+        self.hit_enemies.add(enemy)
+        # 如果武器不能穿透，则在击中后销毁
+        if not self.penetration:
+            self.kill()
+        
     def update(self, dt):
         # 更新投掷动画进度
         if self.throw_time < self.throw_duration:

@@ -265,8 +265,8 @@ class Game:
             resource_manager.unpause_music()
         
     def update(self, dt):
-        # 如果在主菜单或读取菜单中，不更新游戏状态
-        if self.in_main_menu or self.load_menu.is_active:
+        """更新游戏状态"""
+        if self.in_main_menu or self.game_over or self.paused:
             return
             
         # 如果游戏结束或暂停或正在选择升级，只更新菜单
@@ -386,19 +386,24 @@ class Game:
                     distance = (dx**2 + dy**2)**0.5
                     
                     if distance < enemy.rect.width / 2 + thrown_knife.rect.width / 2:
-                        enemy.take_damage(thrown_knife.damage)
-                        # 播放击中音效
-                        resource_manager.play_sound("hit")
-                        if enemy.health <= 0:
-                            self.score += enemy.score_value
-                            # 在敌人死亡位置生成物品
-                            self.item_manager.spawn_item(enemy.rect.x, enemy.rect.y, enemy.type)
-                            self.enemy_manager.remove_enemy(enemy)
-                            # 播放敌人死亡音效
-                            resource_manager.play_sound("enemy_death")
-                        # 如果武器不能穿透，则销毁它
-                        if not thrown_knife.penetration:
-                            thrown_knife.kill()
+                        if thrown_knife.can_damage_enemy(enemy):
+                            thrown_knife.register_hit(enemy)
+                            enemy.take_damage(thrown_knife.damage)
+                            # 播放击中音效
+                            resource_manager.play_sound("hit")
+                            if enemy.health <= 0:
+                                self.score += enemy.score_value
+                                # 在敌人死亡位置生成物品
+                                self.item_manager.spawn_item(enemy.rect.x, enemy.rect.y, enemy.type)
+                                self.enemy_manager.remove_enemy(enemy)
+                                # 播放敌人死亡音效
+                                resource_manager.play_sound("enemy_death")
+                            # 如果武器不能穿透，则销毁它
+                            if not thrown_knife.penetration:
+                                thrown_knife.kill()
+                        else:
+                            # DO NOTHING
+                            pass
         
         # 检测玩家和敌人的碰撞
         for enemy in self.enemy_manager.enemies:

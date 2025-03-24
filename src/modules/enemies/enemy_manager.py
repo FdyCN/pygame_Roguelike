@@ -54,7 +54,6 @@ class EnemyManager:
         # 如果玩家等级达到5级，更新蝙蝠生成计时器
         if player.level >= 5:
             self.bat_spawn_timer += dt
-            print(int(self.bat_spawn_timer) % 60)
             if int(self.bat_spawn_timer) % 60 == 0:  # 每60秒生成一个蝙蝠
                 self.bat_spawn_timer = 0
                 self.spawn_bat(player)
