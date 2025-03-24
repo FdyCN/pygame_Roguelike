@@ -1,8 +1,7 @@
 # 游戏名字还没想好
 
 这是一个使用 Cursor + Pygame 开发的2D像素风肉鸽游戏。边玩边学。
-（50% cursor聊天与生成 + 15% debug + 15% codereview + 10% 找素材 + 4% 开开脑洞 + 4% 等待时玩手机 + 1% 写一些没有意义的README）
-使用cursor 0.47.8 + claude-3.5-sonnet进行开发
+**（50% cursor聊天与生成 + 15% debug + 15% codereview + 10% 找素材 + 4% 开开脑洞 + 4% 等待时玩手机 + 1% 写一些没有意义的README）**
 
 ## 项目结构
 
@@ -52,7 +51,6 @@ python src/main.py
 ## 游戏控制
 
 - WASD：移动
-- 鼠标左键：攻击
 - ESC：暂停游戏
 - 空格：确认/选择
 
@@ -82,24 +80,6 @@ python src/main.py
 - 敌人生成系统
 - 难度随时间递增
 
-
-## 游戏控制
-
-- W/A/S/D - 移动角色
-- ESC - 暂停游戏
-
-## 开发说明
-
-项目结构：
-```
-project/
-├── assets/          # 图片、音效等资源
-├── src/             # 源代码
-│   ├── main.py      # 游戏入口
-│   └── modules/     # 游戏模块
-├── requirements.txt  # 项目依赖
-└── README.md        # 项目说明
-```
 
 ## 当前实现
 - 玩玩看就知道了
