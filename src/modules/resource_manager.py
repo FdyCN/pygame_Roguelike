@@ -163,6 +163,8 @@ class ResourceManager:
         Returns:
             pygame.Surface: 图片surface,如果不存在返回错误提示图片
         """
+
+        return None
         if name not in self.images:
             print(f"图片资源 {name} 未加载")
             surface = pygame.Surface((1, 1))
@@ -179,6 +181,7 @@ class ResourceManager:
         Returns:
             pygame.mixer.Sound: 音效对象,如果不存在返回None
         """
+        return None
         if name not in self.sounds:
             print(f"音效资源 {name} 未加载")
             return None
@@ -193,6 +196,7 @@ class ResourceManager:
         Returns:
             str: 音乐文件路径,如果不存在返回None
         """
+        return None
         if name not in self.music:
             print(f"音乐资源 {name} 未加载")
             return None
@@ -204,6 +208,7 @@ class ResourceManager:
         Args:
             name: 音效资源名称
         """
+        return None
         sound = self.get_sound(name)
         if sound:
             sound.play()
@@ -215,6 +220,7 @@ class ResourceManager:
             name: 音乐资源名称
             loops: 循环次数,-1表示无限循环
         """
+        return None
         music_path = self.get_music(name)
         if music_path:
             pygame.mixer.music.load(music_path)
