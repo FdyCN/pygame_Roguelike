@@ -6,7 +6,7 @@ from .weapon import Weapon
 class FrostNovaEffect(pygame.sprite.Sprite):
     def __init__(self, x, y, stats):
         super().__init__()
-        self.image = resource_manager.load_image('weapon_frost_nova', 'images/weapons/frost_nova.png')
+        self.image = resource_manager.load_image('weapon_frost_nova', 'images/weapons/nova_32x32.png')
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
         

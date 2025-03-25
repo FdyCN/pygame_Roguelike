@@ -7,9 +7,14 @@ class ThrownKnife(pygame.sprite.Sprite):
     def __init__(self, x, y, direction_x, direction_y, stats):
         super().__init__()
         self.image = resource_manager.load_image('weapon_knife', 'images/weapons/knife.png')
-        # 根据方向旋转图像
-        angle = math.degrees(math.atan2(-direction_y, direction_x))
-        self.image = pygame.transform.rotate(self.image, -angle)
+        
+        # 首先将图片旋转45度，使刀柄朝左，刀尖朝右
+        base_image = pygame.transform.rotate(self.image, -45)
+        
+        # 然后根据飞行方向旋转图像
+        # 计算飞行方向的角度（以水平向右为0度）
+        angle = math.degrees(math.atan2(direction_y, direction_x))
+        self.image = pygame.transform.rotate(base_image, -angle)
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
         
@@ -125,7 +130,7 @@ class Knife(Weapon):
         super().__init__(player, 'knife', base_stats)
         
         # 加载武器图像
-        self.image = resource_manager.load_image('weapon_knife', 'images/weapons/knife.png')
+        self.image = resource_manager.load_image('weapon_knife', 'images/weapons/knife_32x32.png')
         self.rect = self.image.get_rect()
         
         # 投掷的小刀列表
@@ -154,13 +159,13 @@ class Knife(Weapon):
             # 计算扇形分布
             spread_angle = self.current_stats['spread_angle']
             angle_step = spread_angle / (knives_count - 1)
-            base_angle = math.degrees(math.atan2(-direction_y, direction_x))
+            base_angle = math.degrees(math.atan2(direction_y, direction_x))
             start_angle = base_angle - spread_angle / 2
             
             for i in range(knives_count):
                 current_angle = math.radians(start_angle + angle_step * i)
                 knife_dir_x = math.cos(current_angle)
-                knife_dir_y = -math.sin(current_angle)
+                knife_dir_y = math.sin(current_angle)
                 self._throw_single_knife(knife_dir_x, knife_dir_y)
         else:
             # 单个小刀直接投掷

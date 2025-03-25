@@ -86,7 +86,7 @@ class Fireball(Weapon):
         super().__init__(player, 'fireball', base_stats)
         
         # 加载武器图像
-        self.image = resource_manager.load_image('weapon_fireball', 'images/weapons/fireball.png')
+        self.image = resource_manager.load_image('weapon_fireball', 'images/weapons/fireball_32x32.png')
         self.rect = self.image.get_rect()
         
         # 投射物列表

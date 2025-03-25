@@ -1,12 +1,16 @@
 import pygame
 from .knife import Knife
+from .fireball import Fireball
+from .frost_nova import FrostNova
 
 class WeaponManager:
     def __init__(self, player):
         self.player = player
         self.weapons = []
         self.available_weapons = {
-            'knife': Knife
+            'knife': Knife,
+            'fireball': Fireball,
+            'frost_nova': FrostNova
         }
         
         # 初始武器
