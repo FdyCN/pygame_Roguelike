@@ -9,6 +9,7 @@ from .menus.main_menu import MainMenu
 from .menus.save_menu import SaveMenu
 from .save_system import SaveSystem
 from .resource_manager import resource_manager
+from .upgrade_system import UpgradeManager, WeaponUpgradeLevel, PassiveUpgradeLevel
 
 class Game:
     def __init__(self, screen):
@@ -39,6 +40,7 @@ class Game:
         self.weapon_manager = None
         self.item_manager = None
         self.save_system = SaveSystem()
+        self.upgrade_manager = UpgradeManager()  # 添加升级管理器
         
         # 创建UI和菜单
         self.ui = UI(screen)
@@ -220,13 +222,6 @@ class Game:
                 self.game_over = False
             return
             
-        # 处理升级菜单事件
-        if self.upgrade_menu.is_active:
-            selected_upgrade = self.upgrade_menu.handle_event(event)
-            if selected_upgrade:
-                self.player.apply_upgrade(selected_upgrade)
-                resource_manager.play_sound("upgrade")
-            return
             
         # 处理暂停菜单事件
         if self.paused:
@@ -244,16 +239,56 @@ class Game:
             elif action == "exit":  # 退出游戏
                 self.running = False  # 直接退出游戏
             return
+               
+        # 如果正在选择升级
+        if self.upgrade_menu.is_active:
+            selected_upgrade = self.upgrade_menu.handle_event(event)
+            if selected_upgrade:
+                self._apply_upgrade(selected_upgrade)
+            return True
             
-        # 处理ESC键暂停
+        # ESC键暂停游戏
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
             self.toggle_pause()
-            return
+            return True
             
         # 处理玩家输入
         if self.player:
             self.player.handle_event(event)
             
+        return True
+        
+    def _apply_upgrade(self, upgrade_level):
+        """应用升级效果
+        
+        Args:
+            upgrade_level: WeaponUpgradeLevel 或 PassiveUpgradeLevel 实例
+        """
+        if isinstance(upgrade_level, WeaponUpgradeLevel):
+            # 获取武器类型
+            weapon_type = None
+            for type_, upgrade in self.upgrade_manager.weapon_upgrades.items():
+                if upgrade_level in upgrade.levels:
+                    weapon_type = type_
+                    break
+                    
+            if weapon_type:
+                if self.player.apply_weapon_upgrade(weapon_type, upgrade_level.level, upgrade_level.effects):
+                    # 如果是新武器，创建并添加到玩家的武器列表
+                    if len([w for w in self.player.weapons if w.type == weapon_type]) == 0:
+                        self.weapon_manager.add_weapon(weapon_type)
+                        
+        elif isinstance(upgrade_level, PassiveUpgradeLevel):
+            # 获取被动类型
+            passive_type = None
+            for type_, upgrade in self.upgrade_manager.passive_upgrades.items():
+                if upgrade_level in upgrade.levels:
+                    passive_type = type_
+                    break
+                    
+            if passive_type:
+                self.player.apply_passive_upgrade(passive_type, upgrade_level.level, upgrade_level.effects)
+                
     def toggle_pause(self):
         """切换游戏暂停状态"""
         self.paused = not self.paused
@@ -300,10 +335,10 @@ class Game:
         # 检测碰撞
         self._check_collisions()
         
-        # 检查是否升级
+        # 检查是否可以升级
         if self.player.add_experience(0):  # 检查是否可以升级，不添加经验值
             self.player.level_up()
-            self.upgrade_menu.show(self.player)  # 显示升级选择菜单
+            self.upgrade_menu.show(self.player, self)  # 显示升级选择菜单，传入Game实例
             
     def render(self):
         """渲染游戏画面"""
@@ -327,8 +362,7 @@ class Game:
         # 渲染游戏对象（考虑相机偏移）
         self.enemy_manager.render(self.screen, self.camera_x, self.camera_y, 
                                 self.screen_center_x, self.screen_center_y)
-        self.weapon_manager.render(self.screen, self.camera_x, self.camera_y, 
-                                 self.screen_center_x, self.screen_center_y)
+        self.weapon_manager.render(self.screen, self.camera_x, self.camera_y)
         self.item_manager.render(self.screen, self.camera_x, self.camera_y, 
                                self.screen_center_x, self.screen_center_y)
         

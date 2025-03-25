@@ -2,7 +2,7 @@ import pygame
 import math
 from .resource_manager import resource_manager
 from .weapons.knife import Knife
-from .upgrade_system import UpgradeType
+from .upgrade_system import UpgradeType, WeaponUpgradeLevel, PassiveUpgradeLevel
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, x, y):
@@ -39,6 +39,14 @@ class Player(pygame.sprite.Sprite):
         self.world_x = x
         self.world_y = y
         
+        # 武器系统
+        self.weapons = []  # 最多3个武器
+        self.weapon_levels = {}  # 记录每个武器的等级 {'knife': 1, 'fireball': 1}
+        
+        # 被动系统
+        self.passives = {}  # 最多3个被动 {'health': PassiveUpgrade, 'speed': PassiveUpgrade}
+        self.passive_levels = {}  # 记录每个被动的等级 {'health': 1, 'speed': 1}
+        
         # 基础属性
         self.base_max_health = 100
         self.base_speed = 200
@@ -58,17 +66,6 @@ class Player(pygame.sprite.Sprite):
         # 金币
         self.coins = 0
         
-        # 武器列表
-        self.weapons = []  # 武器将由WeaponManager管理
-        
-        # 被动效果
-        self.passive_effects = {
-            'max_health': 0,  # 额外生命值
-            'speed': 0,       # 速度加成（百分比）
-            'exp_gain': 0,    # 经验获取加成（百分比）
-            'coin_gain': 0,    # 经验获取加成（百分比）
-        }
-        
         # 移动相关
         self.velocity = pygame.math.Vector2()
         self.direction = pygame.math.Vector2()
@@ -82,10 +79,10 @@ class Player(pygame.sprite.Sprite):
         # 无敌时间相关
         self.invincible = False
         self.invincible_timer = 0
-        self.invincible_duration = 2.0  # 无敌时间持续2秒
-        self.blink_interval = 0.1  # 闪烁间隔
+        self.invincible_duration = 2.0
+        self.blink_interval = 0.1
         self.blink_timer = 0
-        self.visible = True  # 控制闪烁显示
+        self.visible = True
         
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN:
@@ -218,11 +215,107 @@ class Player(pygame.sprite.Sprite):
         self.health = min(self.health + amount, self.max_health)
         return True
         
+    def apply_weapon_upgrade(self, weapon_type, level, effects):
+        """应用武器升级
+        
+        Args:
+            weapon_type: 武器类型（如'knife', 'fireball'等）
+            level: 升级后的等级
+            effects: 升级效果
+        """
+        if weapon_type not in self.weapon_levels:
+            # 新武器
+            if len(self.weapons) < 3:  # 检查武器数量上限
+                self.weapon_levels[weapon_type] = level
+                return True
+        else:
+            # 升级现有武器
+            self.weapon_levels[weapon_type] = level
+            # 更新武器属性
+            for weapon in self.weapons:
+                if weapon.type == weapon_type:
+                    weapon.apply_effects(effects)
+                    break
+            return True
+        return False
+            
+    def apply_passive_upgrade(self, passive_type, level, effects):
+        """应用被动升级
+        
+        Args:
+            passive_type: 被动类型（如'health', 'speed'等）
+            level: 升级后的等级
+            effects: 升级效果
+        """
+        if passive_type not in self.passive_levels:
+            # 新被动
+            if len(self.passives) < 3:  # 检查被动数量上限
+                self.passive_levels[passive_type] = level
+                self.passives[passive_type] = effects
+                self._update_stats()
+                return True
+        else:
+            # 升级现有被动
+            self.passive_levels[passive_type] = level
+            self.passives[passive_type] = effects
+            self._update_stats()
+            return True
+        return False
+        
+    def get_weapon_level(self, weapon_type):
+        """获取指定武器的等级"""
+        return self.weapon_levels.get(weapon_type, 0)
+        
+    def get_passive_level(self, passive_type):
+        """获取指定被动的等级"""
+        return self.passive_levels.get(passive_type, 0)
+        
+    def add_weapon(self, weapon):
+        """添加武器到玩家的武器列表
+        
+        Args:
+            weapon: Weapon实例
+        """
+        if len(self.weapons) < 3 and weapon.type not in [w.type for w in self.weapons]:
+            self.weapons.append(weapon)
+            self.weapon_levels[weapon.type] = 1
+            return True
+        return False
+        
+    def remove_weapon(self, weapon_type):
+        """移除指定类型的武器
+        
+        Args:
+            weapon_type: 武器类型
+        """
+        self.weapons = [w for w in self.weapons if w.type != weapon_type]
+        if weapon_type in self.weapon_levels:
+            del self.weapon_levels[weapon_type]
+            
+    def _update_stats(self):
+        """更新玩家属性（考虑所有被动效果）"""
+        # 重置为基础属性
+        self.max_health = self.base_max_health
+        self.speed = self.base_speed
+        self.exp_multiplier = self.base_exp_multiplier
+        
+        # 应用被动效果
+        for effects in self.passives.values():
+            if 'max_health' in effects:
+                self.max_health += effects['max_health']
+            if 'speed' in effects:
+                self.speed *= (1 + effects['speed'])
+            if 'exp_gain' in effects:
+                self.exp_multiplier *= (1 + effects['exp_gain'])
+        
+        # 确保当前生命值不超过最大生命值
+        self.health = min(self.health, self.max_health)
+        
     def add_experience(self, amount):
         """添加经验值并检查是否升级"""
         self.experience += amount * (1 + self.exp_multiplier)
         return self.experience >= self.exp_to_next_level
-        
+            
     def level_up(self):
         """升级处理"""
         self.level += 1
@@ -231,46 +324,6 @@ class Player(pygame.sprite.Sprite):
         # 移除自动增加属性的代码，改为只播放音效
         resource_manager.play_sound("level_up")
         return True
-        
-    def apply_upgrade(self, upgrade):
-        """应用升级效果"""
-        if upgrade.upgrade_type == UpgradeType.WEAPON:
-            weapon_class = None
-            if upgrade.weapon_type == "knife":
-                weapon_class = Knife
-            # 这里可以继续添加其他武器类型的判断
-            
-            if weapon_class:
-                if upgrade.weapon_type in [w.type for w in self.weapons]:
-                    # 升级现有武器
-                    for weapon in self.weapons:
-                        if weapon.type == upgrade.weapon_type:
-                            weapon.upgrade(upgrade)
-                else:
-                    # 添加新武器
-                    if len(self.weapons) < 6:
-                        new_weapon = weapon_class()
-                        self.weapons.append(new_weapon)
-        
-        elif upgrade.upgrade_type == UpgradeType.PASSIVE:
-            # 应用被动效果
-            self.passive_effects[upgrade.stat_type] += upgrade.effect_value
-            self._update_stats()
-            
-    def _update_stats(self):
-        """更新所有属性（包含被动加成）"""
-        # 更新最大生命值
-        old_max_health = self.max_health
-        self.max_health = self.base_max_health + self.passive_effects['max_health']
-        # 如果最大生命值增加，当前生命值也相应增加
-        if self.max_health > old_max_health:
-            self.health += (self.max_health - old_max_health)
-        
-        # 更新速度（基础速度 * (1 + 速度加成百分比)）
-        self.speed = self.base_speed * (1 + self.passive_effects['speed'])
-        
-        # 更新经验获取倍率
-        self.exp_multiplier = self.base_exp_multiplier + self.passive_effects['exp_gain']
         
     def add_coins(self, amount):
         """添加金币"""

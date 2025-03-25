@@ -18,9 +18,9 @@ class WeaponManager:
         for weapon in self.weapons[:]:
             weapon.update(dt)
             
-    def render(self, screen, camera_x, camera_y, screen_center_x, screen_center_y):
+    def render(self, screen, camera_x, camera_y):
         for weapon in self.weapons:
-            weapon.render(screen, camera_x, camera_y, screen_center_x, screen_center_y)
+            weapon.render(screen, camera_x, camera_y)
             
     def add_weapon(self, weapon_name):
         if weapon_name in self.available_weapons:

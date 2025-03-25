@@ -1,6 +1,6 @@
 import pygame
 from .utils import FontManager
-from .upgrade_system import UpgradeManager, UpgradeType
+from .upgrade_system import UpgradeManager, UpgradeType, WeaponUpgradeLevel
 from .resource_manager import resource_manager
 
 class Button:
@@ -246,9 +246,9 @@ class UpgradeMenu(Menu):
         super().__init__(screen)
         self.options = []
         self.selected_index = 0
-        self.upgrade_manager = UpgradeManager()
         self.option_rects = []
         self.player = None
+        self.game = None  # 添加对Game实例的引用
         
         # 修改菜单样式
         self.width = 800
@@ -259,18 +259,26 @@ class UpgradeMenu(Menu):
         # 添加特殊颜色
         self.weapon_color = (255, 100, 100)  # 红色
         self.passive_color = (100, 255, 100)  # 绿色
+        self.effect_color = (200, 200, 100)   # 黄色
+        self.level_color = (100, 200, 255)    # 蓝色
         
-    def show(self, player):
-        """显示升级菜单并重置玩家移动状态"""
+    def show(self, player, game):
+        """显示升级菜单并重置玩家移动状态
+        
+        Args:
+            player: Player实例
+            game: Game实例
+        """
         self.is_active = True
         self.player = player
+        self.game = game
         # 重置玩家的移动状态
         self.player.moving = {'up': False, 'down': False, 'left': False, 'right': False}
         self.player.direction.x = 0
         self.player.direction.y = 0
         
-        # 获取可用的升级选项
-        self.options = self.upgrade_manager.get_random_upgrades(player)
+        # 从Game的upgrade_manager获取可用的升级选项
+        self.options = self.game.upgrade_manager.get_random_upgrades(player)
         self.selected_index = 0
         
     def hide(self):
@@ -332,9 +340,9 @@ class UpgradeMenu(Menu):
         self.option_rects = []
         
         # 绘制选项
-        for i, option in enumerate(self.options):
+        for i, upgrade in enumerate(self.options):
             # 选项背景
-            option_height = 120
+            option_height = 140  # 增加高度以容纳更多信息
             option_y = self.y + 90 + i * (option_height + 10)
             option_rect = pygame.Rect(self.x + 10, option_y, self.width - 20, option_height)
             
@@ -342,6 +350,8 @@ class UpgradeMenu(Menu):
             if i == self.selected_index:
                 pygame.draw.rect(self.screen, self.selected_color, option_rect)
                 pygame.draw.rect(self.screen, self.title_color, option_rect, 2)
+            else:
+                pygame.draw.rect(self.screen, (40, 40, 40), option_rect)
             
             # 绘制图标背景和边框
             icon_bg_rect = pygame.Rect(self.x + 20, option_y + 10, 64, 64)
@@ -349,20 +359,42 @@ class UpgradeMenu(Menu):
             pygame.draw.rect(self.screen, self.border_color, icon_bg_rect, 1)
             
             # 绘制图标（如果有）
-            if option.icon:
-                icon_rect = option.icon.get_rect(center=icon_bg_rect.center)
-                self.screen.blit(option.icon, icon_rect)
+            if upgrade.icon:
+                icon_rect = upgrade.icon.get_rect(center=icon_bg_rect.center)
+                self.screen.blit(upgrade.icon, icon_rect)
             
-            # 绘制选项名称（根据类型使用不同颜色）
-            name_color = self.weapon_color if option.upgrade_type == UpgradeType.WEAPON else self.passive_color
+            # 绘制选项名称和等级
+            name_color = self.weapon_color if isinstance(upgrade, WeaponUpgradeLevel) else self.passive_color
             if i == self.selected_index:
                 name_color = self.hover_color
-            name = self.option_font.render(option.name, True, name_color)
-            self.screen.blit(name, (self.x + 100, option_y + 20))
+                
+            # 获取升级类型和当前等级
+            upgrade_type = "武器" if isinstance(upgrade, WeaponUpgradeLevel) else "被动"
+            level_text = f"等级 {upgrade.level}"
             
-            # 绘制选项描述
-            desc = self.desc_font.render(option.description, True, self.text_color)
-            self.screen.blit(desc, (self.x + 100, option_y + 60))
+            # 绘制名称和等级
+            name = self.option_font.render(f"{upgrade_type}: {upgrade.name}", True, name_color)
+            level = self.desc_font.render(level_text, True, self.level_color)
+            self.screen.blit(name, (self.x + 100, option_y + 15))
+            self.screen.blit(level, (self.x + 100, option_y + 45))
+            
+            # 绘制效果描述
+            desc = self.desc_font.render(upgrade.description, True, self.text_color)
+            self.screen.blit(desc, (self.x + 100, option_y + 70))
+            
+            # 绘制具体效果变化
+            effects_text = []
+            for stat, value in upgrade.effects.items():
+                if isinstance(value, dict):
+                    if 'multiply' in value:
+                        effects_text.append(f"{stat}: x{value['multiply']}")
+                    elif 'add' in value:
+                        effects_text.append(f"{stat}: +{value['add']}")
+                else:
+                    effects_text.append(f"{stat}: {value}")
+                    
+            effects = self.desc_font.render("效果: " + ", ".join(effects_text), True, self.effect_color)
+            self.screen.blit(effects, (self.x + 100, option_y + 95))
             
             # 保存选项矩形
             self.option_rects.append(option_rect) 

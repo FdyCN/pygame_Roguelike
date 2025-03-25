@@ -1,200 +1,292 @@
 import pygame
 import random
 from enum import Enum
+from .resource_manager import resource_manager
 
 class UpgradeType(Enum):
     WEAPON = "weapon"
     PASSIVE = "passive"
 
-class UpgradeOption:
-    def __init__(self, name, description, upgrade_type, effect_value=0, icon_path=None):
+class WeaponUpgradeLevel:
+    def __init__(self, name, level, effects, description, icon_path=None):
         self.name = name
+        self.level = level
+        self.effects = effects  # 字典，包含各种效果的变化
         self.description = description
-        self.upgrade_type = upgrade_type
-        self.effect_value = effect_value
         self.icon = None
         if icon_path:
             try:
-                self.icon = pygame.image.load(icon_path).convert_alpha()
+                self.icon = resource_manager.load_image(f'weapon_upgrade_{level}', icon_path)
                 self.icon = pygame.transform.scale(self.icon, (48, 48))
             except:
                 print(f"无法加载图标: {icon_path}")
 
-class WeaponUpgrade(UpgradeOption):
-    def __init__(self, name, description, weapon_type, damage=0, cooldown=0, icon_path=None):
-        super().__init__(name, description, UpgradeType.WEAPON, icon_path=icon_path)
-        self.weapon_type = weapon_type
-        self.damage = damage
-        self.cooldown = cooldown
+class WeaponUpgrade:
+    def __init__(self, name, max_level, levels):
+        self.name = name
+        self.max_level = max_level
+        self.levels = levels  # 列表，每个元素是WeaponUpgradeLevel
+        self.type = UpgradeType.WEAPON
 
-class PassiveUpgrade(UpgradeOption):
-    def __init__(self, name, description, stat_type, value, icon_path=None):
-        super().__init__(name, description, UpgradeType.PASSIVE, effect_value=value, icon_path=icon_path)
-        self.stat_type = stat_type
+class PassiveUpgradeLevel:
+    def __init__(self, name, level, effects, description, icon_path=None):
+        self.name = name
+        self.level = level
+        self.effects = effects
+        self.description = description
+        self.icon = None
+        if icon_path:
+            try:
+                self.icon = resource_manager.load_image(f'passive_upgrade_{level}', icon_path)
+                self.icon = pygame.transform.scale(self.icon, (48, 48))
+            except:
+                print(f"无法加载图标: {icon_path}")
+
+class PassiveUpgrade:
+    def __init__(self, name, max_level, levels):
+        self.name = name
+        self.max_level = max_level
+        self.levels = levels
+        self.type = UpgradeType.PASSIVE
 
 class UpgradeManager:
     def __init__(self):
-        # 基础武器升级选项
+        # 武器升级配置
         self.weapon_upgrades = {
-            'knife': [
-                WeaponUpgrade(
-                    "飞刀强化 I",
-                    "飞刀伤害提升30%，冷却时间减少10%",
-                    "knife",
-                    damage=0.3,
-                    cooldown=-0.1,
-                    icon_path="images/weapons/knife_upgrade1.png"
-                ),
-                WeaponUpgrade(
-                    "飞刀强化 II",
-                    "飞刀伤害提升50%，冷却时间减少15%",
-                    "knife",
-                    damage=0.5,
-                    cooldown=-0.15,
-                    icon_path="images/weapons/knife_upgrade2.png"
-                ),
-                WeaponUpgrade(
-                    "飞刀强化 III",
-                    "飞刀伤害提升80%，冷却时间减少20%",
-                    "knife",
-                    damage=0.8,
-                    cooldown=-0.2,
-                    icon_path="images/weapons/knife_upgrade3.png"
-                )
-            ]
+            'knife': WeaponUpgrade(
+                name="飞刀",
+                max_level=3,
+                levels=[
+                    WeaponUpgradeLevel(
+                        name="飞刀",
+                        level=1,
+                        effects={
+                            'damage': 20,
+                            'attack_speed': 1.0,
+                            'projectile_speed': 400,
+                            'penetration': False,
+                            'knives_per_throw': 1,
+                            'spread_angle': 0,
+                            'lifetime': 3.0
+                        },
+                        description="基础飞刀，单发直线飞行",
+                        icon_path="images/weapons/knife_upgrade1.png"
+                    ),
+                    WeaponUpgradeLevel(
+                        name="飞刀",
+                        level=2,
+                        effects={
+                            'damage': 20,
+                            'attack_speed': 1.1,
+                            'projectile_speed': 400,
+                            'penetration': False,
+                            'knives_per_throw': 2,
+                            'spread_angle': 15,
+                            'lifetime': 3.0
+                        },
+                        description="同时发射两把飞刀，呈扇形分布",
+                        icon_path="images/weapons/knife_upgrade2.png"
+                    ),
+                    WeaponUpgradeLevel(
+                        name="飞刀",
+                        level=3,
+                        effects={
+                            'damage': 30,
+                            'attack_speed': 1.25,
+                            'projectile_speed': 400,
+                            'penetration': True,
+                            'knives_per_throw': 2,
+                            'spread_angle': 15,
+                            'lifetime': 3.0
+                        },
+                        description="飞刀可以穿透敌人，伤害提升",
+                        icon_path="images/weapons/knife_upgrade3.png"
+                    )
+                ]
+            ),
+            'fireball': WeaponUpgrade(
+                name="火球术",
+                max_level=3,
+                levels=[
+                    WeaponUpgradeLevel(
+                        name="火球术",
+                        level=1,
+                        effects={
+                            'damage': 25,
+                            'radius': 30,
+                            'burn_duration': 3,
+                            'burn_damage': 5,
+                            'cooldown': 1.5
+                        },
+                        description="发射火球，造成范围伤害并点燃敌人",
+                        icon_path="images/weapons/fireball_upgrade1.png"
+                    ),
+                    WeaponUpgradeLevel(
+                        name="火球术",
+                        level=2,
+                        effects={
+                            'damage': 25,
+                            'radius': 40,
+                            'burn_duration': 4,
+                            'burn_damage': 8,
+                            'cooldown': 1.5
+                        },
+                        description="增加爆炸范围和燃烧伤害",
+                        icon_path="images/weapons/fireball_upgrade2.png"
+                    ),
+                    WeaponUpgradeLevel(
+                        name="火球术",
+                        level=3,
+                        effects={
+                            'damage': 35,
+                            'radius': 40,
+                            'burn_duration': 5,
+                            'burn_damage': 10,
+                            'cooldown': 1.2
+                        },
+                        description="提升伤害和燃烧效果，减少冷却时间",
+                        icon_path="images/weapons/fireball_upgrade3.png"
+                    )
+                ]
+            )
         }
         
-        # 新武器选项
-        self.new_weapons = [
-            WeaponUpgrade(
-                "火球术",
-                "发射一个火球，造成25点伤害并点燃敌人",
-                "fireball",
-                damage=25,
-                cooldown=1.5,
-                icon_path="images/weapons/fireball.png"
+        # 被动升级配置
+        self.passive_upgrades = {
+            'health': PassiveUpgrade(
+                name="生命强化",
+                max_level=3,
+                levels=[
+                    PassiveUpgradeLevel(
+                        name="生命强化",
+                        level=1,
+                        effects={'max_health': 50},
+                        description="增加50点最大生命值",
+                        icon_path="images/passives/health_up1.png"
+                    ),
+                    PassiveUpgradeLevel(
+                        name="生命强化",
+                        level=2,
+                        effects={'max_health': 100},
+                        description="增加100点最大生命值",
+                        icon_path="images/passives/health_up2.png"
+                    ),
+                    PassiveUpgradeLevel(
+                        name="生命强化",
+                        level=3,
+                        effects={'max_health': 200},
+                        description="增加200点最大生命值",
+                        icon_path="images/passives/health_up3.png"
+                    )
+                ]
             ),
-            WeaponUpgrade(
-                "冰霜新星",
-                "释放冰霜新星，对周围敌人造成20点伤害并减速",
-                "frost_nova",
-                damage=20,
-                cooldown=2.0,
-                icon_path="images/weapons/frost_nova.png"
+            'speed': PassiveUpgrade(
+                name="迅捷",
+                max_level=3,
+                levels=[
+                    PassiveUpgradeLevel(
+                        name="迅捷",
+                        level=1,
+                        effects={'speed': 0.1},
+                        description="移动速度提升10%",
+                        icon_path="images/passives/speed_up1.png"
+                    ),
+                    PassiveUpgradeLevel(
+                        name="迅捷",
+                        level=2,
+                        effects={'speed': 0.2},
+                        description="移动速度提升20%",
+                        icon_path="images/passives/speed_up2.png"
+                    ),
+                    PassiveUpgradeLevel(
+                        name="迅捷",
+                        level=3,
+                        effects={'speed': 0.3},
+                        description="移动速度提升30%",
+                        icon_path="images/passives/speed_up3.png"
+                    )
+                ]
             ),
-            WeaponUpgrade(
-                "闪电链",
-                "发射闪电，可以在敌人之间跳跃，造成15点伤害",
-                "lightning",
-                damage=15,
-                cooldown=1.0,
-                icon_path="images/weapons/lightning.png"
+            'health_regen': PassiveUpgrade(
+                name="生命回复",
+                max_level=3,
+                levels=[
+                    PassiveUpgradeLevel(
+                        name="生命回复",
+                        level=1,
+                        effects={'health_regen': 1},
+                        description="每秒回复1点生命值",
+                        icon_path="images/passives/health_regen1.png"
+                    ),
+                    PassiveUpgradeLevel(
+                        name="生命回复",
+                        level=2,
+                        effects={'health_regen': 2},
+                        description="每秒回复2点生命值",
+                        icon_path="images/passives/health_regen2.png"
+                    ),
+                    PassiveUpgradeLevel(
+                        name="生命回复",
+                        level=3,
+                        effects={'health_regen': 3},
+                        description="每秒回复3点生命值",
+                        icon_path="images/passives/health_regen3.png"
+                    )
+                ]
             )
-        ]
+        }
         
-        # 被动升级选项
-        self.passive_upgrades = [
-            PassiveUpgrade(
-                "生命强化 I",
-                "增加50点最大生命值",
-                "max_health",
-                50,
-                icon_path="images/passives/health_up1.png"
-            ),
-            PassiveUpgrade(
-                "生命强化 II",
-                "增加100点最大生命值",
-                "max_health",
-                100,
-                icon_path="images/passives/health_up2.png"
-            ),
-            PassiveUpgrade(
-                "迅捷 I",
-                "移动速度提升15%",
-                "speed",
-                0.15,
-                icon_path="images/passives/speed_up1.png"
-            ),
-            PassiveUpgrade(
-                "迅捷 II",
-                "移动速度提升25%",
-                "speed",
-                0.25,
-                icon_path="images/passives/speed_up2.png"
-            ),
-            PassiveUpgrade(
-                "经验加成 I",
-                "获得的经验值增加20%",
-                "exp_gain",
-                0.2,
-                icon_path="images/passives/exp_up1.png"
-            ),
-            PassiveUpgrade(
-                "经验加成 II",
-                "获得的经验值增加35%",
-                "exp_gain",
-                0.35,
-                icon_path="images/passives/exp_up2.png"
-            ),
-            PassiveUpgrade(
-                "金币加成",
-                "获得的金币增加25%",
-                "coin_gain",
-                0.25,
-                icon_path="images/passives/coin_up.png"
-            ),
-            PassiveUpgrade(
-                "生命回复",
-                "每秒回复1点生命值",
-                "health_regen",
-                1,
-                icon_path="images/passives/health_regen.png"
-            )
-        ]
-    
     def get_random_upgrades(self, player, count=3):
-        """获取随机升级选项"""
+        """获取随机升级选项
+        
+        Args:
+            player: 玩家对象
+            count: 需要返回的升级选项数量
+            
+        Returns:
+            list: 升级选项列表
+        """
         available_upgrades = []
         
         # 获取当前武器的升级选项
         for weapon in player.weapons:
             if weapon.type in self.weapon_upgrades:
-                # 根据武器等级获取对应的升级选项
-                weapon_level = weapon.level if hasattr(weapon, 'level') else 0
-                if weapon_level < len(self.weapon_upgrades[weapon.type]):
-                    available_upgrades.append(self.weapon_upgrades[weapon.type][weapon_level])
+                weapon_upgrade = self.weapon_upgrades[weapon.type]
+                if weapon.level < weapon_upgrade.max_level:
+                    available_upgrades.append(weapon_upgrade.levels[weapon.level])
         
         # 如果玩家武器数量未达到上限，添加新武器选项
-        if len(player.weapons) < 6:
-            # 只添加还未拥有的武器
+        if len(player.weapons) < 3:  # 最多3个武器
             current_weapon_types = {w.type for w in player.weapons}
-            new_weapons = [w for w in self.new_weapons if w.weapon_type not in current_weapon_types]
+            new_weapons = [w for w in self.weapon_upgrades.keys() 
+                         if w not in current_weapon_types]
             if new_weapons:
-                available_upgrades.extend(random.sample(new_weapons, min(2, len(new_weapons))))
+                # 随机选择一个新武器，添加其1级升级选项
+                new_weapon = random.choice(new_weapons)
+                available_upgrades.append(self.weapon_upgrades[new_weapon].levels[0])
         
-        # 添加被动升级选项
-        # 过滤掉已经达到最高等级的被动
-        available_passives = []
-        for passive in self.passive_upgrades:
-            current_value = player.passive_effects.get(passive.stat_type, 0)
-            if passive.stat_type in ['max_health', 'speed', 'exp_gain']:
-                # 检查是否已经达到最高等级
-                if (passive.stat_type == 'max_health' and current_value < 200) or \
-                   (passive.stat_type == 'speed' and current_value < 0.5) or \
-                   (passive.stat_type == 'exp_gain' and current_value < 0.5):
-                    available_passives.append(passive)
-            else:
-                # 其他被动技能只能获得一次
-                if current_value == 0:
-                    available_passives.append(passive)
+        # 获取可用的被动升级选项
+        for passive in player.weapons:
+            if passive.type in self.passive_upgrades:
+                passive_upgrade = self.passive_upgrades[passive.type]
+                if passive.level < passive_upgrade.max_level:
+                    available_upgrades.append(passive_upgrade.levels[passive.level])
         
-        if available_passives:
-            available_upgrades.extend(random.sample(available_passives, 
-                                                  min(2, len(available_passives))))
+        # 如果玩家被动数量未达到上限，添加新被动选项
+        if len(player.passives) < 3:  # 最多3个被动
+            current_passive_types = set(player.passives.keys())
+            new_passives = [p for p in self.passive_upgrades.keys() 
+                          if p not in current_passive_types]
+            if new_passives:
+                # 随机选择一个新被动，添加其1级升级选项
+                new_passive = random.choice(new_passives)
+                available_upgrades.append(self.passive_upgrades[new_passive].levels[0])
         
-        # 如果可用升级不足3个，随机重复一些选项
+        # 如果可用升级不足count个，随机重复一些选项
         while len(available_upgrades) < count:
+            if not available_upgrades:  # 如果没有任何可用升级
+                break
             available_upgrades.append(random.choice(available_upgrades))
         
         # 随机选择指定数量的升级选项
-        return random.sample(available_upgrades, count) 
+        return random.sample(available_upgrades, min(len(available_upgrades), count)) 
