@@ -2,6 +2,8 @@ import pygame
 import math
 from .resource_manager import resource_manager
 from .weapons.knife import Knife
+from .weapons.fireball import Fireball
+from .weapons.frost_nova import FrostNova
 from .upgrade_system import UpgradeType, WeaponUpgradeLevel, PassiveUpgradeLevel
 
 class Player(pygame.sprite.Sprite):
@@ -42,6 +44,11 @@ class Player(pygame.sprite.Sprite):
         # 武器系统
         self.weapons = []  # 最多3个武器
         self.weapon_levels = {}  # 记录每个武器的等级 {'knife': 1, 'fireball': 1}
+        self.available_weapons = {
+            'knife': Knife,
+            'fireball': Fireball,
+            'frost_nova': FrostNova
+        }
         
         # 被动系统
         self.passives = {}  # 最多3个被动 {'health': PassiveUpgrade, 'speed': PassiveUpgrade}
@@ -83,6 +90,9 @@ class Player(pygame.sprite.Sprite):
         self.blink_interval = 0.1
         self.blink_timer = 0
         self.visible = True
+        
+        # 添加初始武器
+        self.add_weapon('knife')
         
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN:
@@ -223,7 +233,7 @@ class Player(pygame.sprite.Sprite):
             level: 升级后的等级
             effects: 升级效果
         """
-        if weapon_type not in self.weapon_levels:
+        if weapon_type not in self.weapon_levels and weapon_type not in self.weapons:
             # 新武器
             if len(self.weapons) < 3:  # 检查武器数量上限
                 self.weapon_levels[weapon_type] = level
@@ -234,6 +244,7 @@ class Player(pygame.sprite.Sprite):
             # 更新武器属性
             for weapon in self.weapons:
                 if weapon.type == weapon_type:
+                    weapon.level = level
                     weapon.apply_effects(effects)
                     break
             return True
@@ -270,17 +281,36 @@ class Player(pygame.sprite.Sprite):
         """获取指定被动的等级"""
         return self.passive_levels.get(passive_type, 0)
         
-    def add_weapon(self, weapon):
+    def add_weapon(self, weapon_type):
         """添加武器到玩家的武器列表
         
         Args:
-            weapon: Weapon实例
+            weapon_type: 武器类型名称（字符串）
+        Returns:
+            Weapon: 成功时返回武器实例，失败时返回None
         """
-        if len(self.weapons) < 3 and weapon.type not in [w.type for w in self.weapons]:
+        if len(self.weapons) < 3 and weapon_type in self.available_weapons:
+            # 检查是否已有该类型武器
+            for weapon in self.weapons:
+                if isinstance(weapon, self.available_weapons[weapon_type]):
+                    return None
+            
+            # 创建新武器
+            weapon = self.available_weapons[weapon_type](self)
             self.weapons.append(weapon)
-            self.weapon_levels[weapon.type] = 1
-            return True
-        return False
+            self.weapon_levels[weapon_type] = 1
+            return weapon
+        return None
+
+    def update_weapons(self, dt):
+        """更新所有武器状态"""
+        for weapon in self.weapons:
+            weapon.update(dt)
+
+    def render_weapons(self, screen, camera_x, camera_y):
+        """渲染所有武器"""
+        for weapon in self.weapons:
+            weapon.render(screen, camera_x, camera_y)
         
     def remove_weapon(self, weapon_type):
         """移除指定类型的武器

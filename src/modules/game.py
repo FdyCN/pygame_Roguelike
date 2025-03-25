@@ -1,7 +1,6 @@
 import pygame
 from .player import Player
 from .enemies.enemy_manager import EnemyManager
-from .weapons.weapon_manager import WeaponManager
 from .items.item_manager import ItemManager
 from .ui import UI
 from .menu import PauseMenu, GameOverMenu, UpgradeMenu
@@ -18,7 +17,6 @@ class Game:
         self.paused = False
         self.game_over = False
         self.in_main_menu = True  # 是否在主菜单
-        
         
         # 获取屏幕中心点
         self.screen_center_x = self.screen.get_width() // 2
@@ -37,10 +35,9 @@ class Game:
         
         # 游戏管理器
         self.enemy_manager = None
-        self.weapon_manager = None
         self.item_manager = None
         self.save_system = SaveSystem()
-        self.upgrade_manager = UpgradeManager()  # 添加升级管理器
+        self.upgrade_manager = UpgradeManager()
         
         # 创建UI和菜单
         self.ui = UI(screen)
@@ -67,7 +64,6 @@ class Game:
         
         # 初始化游戏管理器
         self.enemy_manager = EnemyManager()
-        self.weapon_manager = WeaponManager(self.player)
         self.item_manager = ItemManager()
         
         # 重置游戏状态
@@ -110,19 +106,7 @@ class Game:
             
             # 初始化游戏管理器
             self.enemy_manager = EnemyManager()
-            self.weapon_manager = WeaponManager(self.player)
             self.item_manager = ItemManager()
-            
-            # 恢复武器状态
-            weapons_data = player_data.get('weapons', [])
-            for weapon_type, weapon_level in weapons_data:
-                # 确保武器被正确添加并返回
-                weapon = self.weapon_manager.add_weapon(weapon_type)
-                if weapon:  # 只有当武器成功创建时才设置等级
-                    for w in self.weapon_manager.weapons:
-                        if isinstance(w, self.weapon_manager.available_weapons[weapon_type]):
-                            w.level = weapon_level
-                            break
             
             # 恢复游戏状态
             game_data = save_data.get('game_data', {})
@@ -276,7 +260,7 @@ class Game:
                 if self.player.apply_weapon_upgrade(weapon_type, upgrade_level.level, upgrade_level.effects):
                     # 如果是新武器，创建并添加到玩家的武器列表
                     if len([w for w in self.player.weapons if w.type == weapon_type]) == 0:
-                        self.weapon_manager.add_weapon(weapon_type)
+                        self.player.add_weapon(weapon_type)
                         
         elif isinstance(upgrade_level, PassiveUpgradeLevel):
             # 获取被动类型
@@ -329,7 +313,7 @@ class Game:
         
         # 更新其他游戏对象
         self.enemy_manager.update(dt, self.player)
-        self.weapon_manager.update(dt)
+        self.player.update_weapons(dt)
         self.item_manager.update(dt, self.player)
         
         # 检测碰撞
@@ -353,23 +337,23 @@ class Game:
             pygame.display.flip()
             return
             
-        # 清空屏幕
+        # 绘制背景
         self.screen.fill((0, 0, 0))
         
-        # 绘制游戏场景
+        # 绘制网格
         self._draw_grid()
         
         # 渲染游戏对象（考虑相机偏移）
         self.enemy_manager.render(self.screen, self.camera_x, self.camera_y, 
                                 self.screen_center_x, self.screen_center_y)
-        self.weapon_manager.render(self.screen, self.camera_x, self.camera_y)
         self.item_manager.render(self.screen, self.camera_x, self.camera_y, 
                                self.screen_center_x, self.screen_center_y)
         
         # 渲染玩家（始终在屏幕中心）
         if self.player:
             self.player.render(self.screen)
-            
+        
+        self.player.render_weapons(self.screen, self.camera_x, self.camera_y)
         # 渲染UI
         if self.player:
             self.ui.render(self.player)
@@ -410,7 +394,7 @@ class Game:
         
     def _check_collisions(self):
         # 检测武器和敌人的碰撞
-        for weapon in self.weapon_manager.weapons:
+        for weapon in self.player.weapons:
             # 对于每个投掷出去的小刀
             for thrown_knife in weapon.thrown_knives:
                 for enemy in self.enemy_manager.enemies:

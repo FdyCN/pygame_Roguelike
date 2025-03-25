@@ -6,7 +6,7 @@ from .weapon import Weapon
 class ThrownKnife(pygame.sprite.Sprite):
     def __init__(self, x, y, direction_x, direction_y, stats):
         super().__init__()
-        self.image = resource_manager.load_image('weapon_knife', 'images/weapons/knife.png')
+        self.image = resource_manager.load_image('weapon_knife', 'images/weapons/knife_32x32.png')
         
         # 首先将图片旋转45度，使刀柄朝左，刀尖朝右
         base_image = pygame.transform.rotate(self.image, -45)
@@ -189,13 +189,3 @@ class Knife(Weapon):
         # 渲染所有投掷出去的小刀
         for knife in self.thrown_knives:
             knife.render(screen, camera_x, camera_y)
-
-    def level_up(self):
-        """
-        通用升级方法，提升所有属性
-        """
-        self.level += 1
-        self.damage += self.upgrade_stats['damage']['increment']
-        self.attack_speed += self.upgrade_stats['attack_speed']['increment']
-        self.knives_per_throw += int(self.upgrade_stats['knives_per_throw']['increment'])
-        self.attack_interval = 1.0 / self.attack_speed 

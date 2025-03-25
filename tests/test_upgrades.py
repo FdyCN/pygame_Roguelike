@@ -7,7 +7,6 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.modules.player import Player
-from src.modules.weapons.weapon_manager import WeaponManager
 from src.modules.upgrade_system import UpgradeManager
 from src.modules.game import Game
 
@@ -17,7 +16,6 @@ class TestUpgrades(unittest.TestCase):
         pygame.init()
         self.screen = pygame.Surface((800, 600))
         self.player = Player(400, 300)
-        self.weapon_manager = WeaponManager(self.player)
         self.upgrade_manager = UpgradeManager()
         
     def test_initial_knife_stats(self):
@@ -49,8 +47,7 @@ class TestUpgrades(unittest.TestCase):
         knife_upgrade = self.upgrade_manager.weapon_upgrades['knife'].levels[1]
         
         # 应用升级效果
-        knife.apply_effects(knife_upgrade.effects)
-        knife.level = 2
+        self.player.apply_weapon_upgrade('knife', 2, knife_upgrade.effects)
         
         # 验证升级后的属性
         expected_stats = {
@@ -75,8 +72,7 @@ class TestUpgrades(unittest.TestCase):
         knife_upgrade = self.upgrade_manager.weapon_upgrades['knife'].levels[2]
         
         # 应用升级效果
-        knife.apply_effects(knife_upgrade.effects)
-        knife.level = 3
+        self.player.apply_weapon_upgrade('knife', 3, knife_upgrade.effects)
         
         # 验证升级后的属性
         expected_stats = {
@@ -126,11 +122,12 @@ class TestUpgrades(unittest.TestCase):
         self.assertEqual(len(self.player.weapons), 1)
         
         # 尝试添加火球
-        self.weapon_manager.add_weapon('fireball')
+        self.player.add_weapon('fireball')
         self.assertEqual(len(self.player.weapons), 2)
         
         # 再次尝试添加火球（应该失败，因为已经有了）
-        self.weapon_manager.add_weapon('fireball')
+        result = self.player.add_weapon('fireball')
+        self.assertIsNone(result)
         self.assertEqual(len(self.player.weapons), 2)
         
     def test_passive_limit(self):
@@ -149,6 +146,25 @@ class TestUpgrades(unittest.TestCase):
         result = self.player.apply_passive_upgrade('new_passive', 1, {'some_effect': 1})
         self.assertFalse(result)
         self.assertEqual(len(self.player.passives), 3)
+
+    def test_upgrade_level(self):
+        """测试武器升级等级"""
+        # 检查初始状态 - 玩家应该有1级飞刀
+        self.assertEqual(len(self.player.weapons), 1)
+        knife = self.player.weapons[0]
+        self.assertEqual(knife.level, 1)
+        
+        # 获取2级飞刀升级
+        knife_upgrade_2 = self.upgrade_manager.weapon_upgrades['knife'].levels[1]
+        # 第一次升级飞刀到2级
+        self.player.apply_weapon_upgrade('knife', 2, knife_upgrade_2.effects)
+        self.assertEqual(knife.level, 2)
+        
+        # 获取3级飞刀升级
+        knife_upgrade_3 = self.upgrade_manager.weapon_upgrades['knife'].levels[2]
+        # 第二次升级飞刀到3级
+        self.player.apply_weapon_upgrade('knife', 3, knife_upgrade_3.effects)
+        self.assertEqual(knife.level, 3)
         
     def tearDown(self):
         """测试后的清理"""
