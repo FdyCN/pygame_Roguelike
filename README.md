@@ -112,4 +112,6 @@ python src/main.py
   - [ ] 支持全局的技能属性
 
 ## 致谢
-素材：Ninja_Frog\Ghost\Bat\Radish 来自：[pixel-adventure](https://pixelfrog-assets.itch.io/pixel-adventure-1)
+素材：
+- Ninja_Frog\Ghost\Bat\Radish 来自：[pixel-adventure](https://pixelfrog-assets.itch.io/pixel-adventure-1)
+- weapons 来自[raven-fantasy-icons](https://clockworkraven.itch.io/raven-fantasy-icons)
