@@ -58,12 +58,22 @@ class Player(pygame.sprite.Sprite):
         self.base_max_health = 100
         self.base_speed = 200
         self.base_exp_multiplier = 1.0
+        self.base_health_regen = 0  # 基础生命恢复速度
+        self.base_defense = 0  # 基础防御力
+        self.base_luck = 1.0  # 基础幸运值
+        self.base_pickup_range = 50  # 基础拾取范围
+        self.base_attack_power = 1.0  # 基础攻击力倍率
         
         # 当前属性（包含被动加成）
         self.max_health = self.base_max_health
         self.health = self.max_health
         self.speed = self.base_speed
         self.exp_multiplier = self.base_exp_multiplier
+        self.health_regen = self.base_health_regen
+        self.defense = self.base_defense
+        self.luck = self.base_luck
+        self.pickup_range = self.base_pickup_range
+        self.attack_power = self.base_attack_power  # 当前攻击力倍率
         
         # 等级和经验值
         self.level = 1
@@ -124,6 +134,10 @@ class Player(pygame.sprite.Sprite):
     def update(self, dt):
         # 更新当前动画
         self.animations[self.current_animation].update(dt)
+        
+        # 生命值恢复
+        if self.health < self.max_health and self.health_regen > 0:
+            self.health = min(self.max_health, self.health + self.health_regen * dt)
         
         # 更新受伤状态
         if self.hurt_timer > 0:
@@ -203,7 +217,10 @@ class Player(pygame.sprite.Sprite):
         if self.invincible:
             return False
             
-        self.health = max(0, self.health - amount)
+        # 计算实际伤害（考虑防御力）
+        actual_damage = amount * (1 - self.defense)
+        self.health = max(0, self.health - actual_damage)
+        
         if self.health <= 0:
             self.health = 0
             # 处理玩家死亡
@@ -328,6 +345,11 @@ class Player(pygame.sprite.Sprite):
         self.max_health = self.base_max_health
         self.speed = self.base_speed
         self.exp_multiplier = self.base_exp_multiplier
+        self.health_regen = self.base_health_regen
+        self.defense = self.base_defense
+        self.luck = self.base_luck
+        self.pickup_range = self.base_pickup_range
+        self.attack_power = self.base_attack_power  # 重置攻击力为基础值
         
         # 应用被动效果
         for effects in self.passives.values():
@@ -337,9 +359,23 @@ class Player(pygame.sprite.Sprite):
                 self.speed *= (1 + effects['speed'])
             if 'exp_gain' in effects:
                 self.exp_multiplier *= (1 + effects['exp_gain'])
+            if 'health_regen' in effects:
+                self.health_regen += effects['health_regen']
+            if 'defense' in effects:
+                self.defense += effects['defense']
+            if 'luck' in effects:
+                self.luck *= (1 + effects['luck'])
+            if 'pickup_range' in effects:
+                self.pickup_range += effects['pickup_range']
+            if 'attack_power' in effects:
+                self.attack_power *= (1 + effects['attack_power'])
         
         # 确保当前生命值不超过最大生命值
         self.health = min(self.health, self.max_health)
+        
+        # 更新所有武器的伤害
+        for weapon in self.weapons:
+            weapon._apply_player_attack_power()
         
     def add_experience(self, amount):
         """添加经验值并检查是否升级"""

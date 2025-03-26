@@ -38,8 +38,7 @@ class Item(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
         
-        # 物品吸引范围， 不要改动
-        self.attract_range = 50
+        # 物品移动速度
         self.attract_speed = 350
         
     def update(self, dt, player):
@@ -51,8 +50,8 @@ class Item(pygame.sprite.Sprite):
         dy = player.world_y - self.world_y
         distance = (dx**2 + dy**2)**0.5
         
-        # 如果在吸引范围内，向玩家移动
-        if distance < self.attract_range:
+        # 如果在玩家的拾取范围内，向玩家移动
+        if distance < player.pickup_range:
             if distance > 0:
                 self.world_x += (dx/distance) * self.attract_speed * dt
                 self.world_y += (dy/distance) * self.attract_speed * dt

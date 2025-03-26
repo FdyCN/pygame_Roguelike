@@ -70,7 +70,7 @@ class UpgradeManager:
                             'lifetime': 3.0
                         },
                         description="基础飞刀，单发直线飞行",
-                        icon_path="images/weapons/knife_upgrade1.png"
+                        icon_path="images/weapons/knife_32x32.png"
                     ),
                     WeaponUpgradeLevel(
                         name="飞刀",
@@ -85,7 +85,7 @@ class UpgradeManager:
                             'lifetime': 3.0
                         },
                         description="同时发射两把飞刀，呈扇形分布",
-                        icon_path="images/weapons/knife_upgrade2.png"
+                        icon_path="images/weapons/knife_32x32.png"
                     ),
                     WeaponUpgradeLevel(
                         name="飞刀",
@@ -100,7 +100,7 @@ class UpgradeManager:
                             'lifetime': 3.0
                         },
                         description="飞刀可以穿透敌人，伤害提升",
-                        icon_path="images/weapons/knife_upgrade3.png"
+                        icon_path="images/weapons/knife_32x32.png"
                     )
                 ]
             ),
@@ -119,7 +119,7 @@ class UpgradeManager:
                             'cooldown': 1.5
                         },
                         description="发射火球，造成范围伤害并点燃敌人",
-                        icon_path="images/weapons/fireball_upgrade1.png"
+                        icon_path="images/weapons/fireball_32x32.png"
                     ),
                     WeaponUpgradeLevel(
                         name="火球术",
@@ -132,7 +132,7 @@ class UpgradeManager:
                             'cooldown': 1.5
                         },
                         description="增加爆炸范围和燃烧伤害",
-                        icon_path="images/weapons/fireball_upgrade2.png"
+                        icon_path="images/weapons/fireball_32x32.png"
                     ),
                     WeaponUpgradeLevel(
                         name="火球术",
@@ -145,7 +145,52 @@ class UpgradeManager:
                             'cooldown': 1.2
                         },
                         description="提升伤害和燃烧效果，减少冷却时间",
-                        icon_path="images/weapons/fireball_upgrade3.png"
+                        icon_path="images/weapons/fireball_32x32.png"
+                    )
+                ]
+            ),
+            'nova': WeaponUpgrade(
+                name="冰锥术",
+                max_level=3,
+                levels=[
+                    WeaponUpgradeLevel(
+                        name="冰锥术",
+                        level=1,
+                        effects={
+                            'damage': 25,
+                            'radius': 30,
+                            'freeze_duration': 3,
+                            'slow_percent': 50,
+                            'cooldown': 1.5
+                        },
+                        description="发射冰锥，造成单体伤害并减速敌人",
+                        icon_path="images/weapons/fireball_32x32.png"
+                    ),
+                    WeaponUpgradeLevel(
+                        name="冰锥术",
+                        level=2,
+                        effects={
+                            'damage': 25,
+                            'radius': 40,
+                            'freeze_duration': 4,
+                            'slow_percent': 50,
+                            'cooldown': 1.5
+                        },
+                        description="造成爆炸范围和减速",
+                        icon_path="images/weapons/fireball_32x32.png"
+                    ),
+                    WeaponUpgradeLevel(
+                        name="冰锥术",
+                        level=3,
+                        effects={
+                            'damage': 35,
+                            'radius': 40,
+                            'freeze_duration': 5,
+                            'slow_percent': 50,
+                            'cooldown': 1.2
+                        },
+                        description="提升伤害和减速效果，减少冷却时间",
+                        icon_path="images/weapons/fireball_32x32.png"
                     )
                 ]
             )
@@ -162,21 +207,21 @@ class UpgradeManager:
                         level=1,
                         effects={'max_health': 50},
                         description="增加50点最大生命值",
-                        icon_path="images/passives/health_up1.png"
+                        icon_path="images/passives/max_health_up_32x32.png"
                     ),
                     PassiveUpgradeLevel(
                         name="生命强化",
                         level=2,
                         effects={'max_health': 100},
                         description="增加100点最大生命值",
-                        icon_path="images/passives/health_up2.png"
+                        icon_path="images/passives/max_health_up_32x32.png"
                     ),
                     PassiveUpgradeLevel(
                         name="生命强化",
                         level=3,
                         effects={'max_health': 200},
                         description="增加200点最大生命值",
-                        icon_path="images/passives/health_up3.png"
+                        icon_path="images/passives/max_health_up_32x32.png"
                     )
                 ]
             ),
@@ -189,21 +234,21 @@ class UpgradeManager:
                         level=1,
                         effects={'speed': 0.1},
                         description="移动速度提升10%",
-                        icon_path="images/passives/speed_up1.png"
+                        icon_path="images/passives/speed_up_32x32.png"
                     ),
                     PassiveUpgradeLevel(
                         name="迅捷",
                         level=2,
                         effects={'speed': 0.2},
                         description="移动速度提升20%",
-                        icon_path="images/passives/speed_up2.png"
+                        icon_path="images/passives/speed_up_32x32.png"
                     ),
                     PassiveUpgradeLevel(
                         name="迅捷",
                         level=3,
                         effects={'speed': 0.3},
                         description="移动速度提升30%",
-                        icon_path="images/passives/speed_up3.png"
+                        icon_path="images/passives/speed_up_32x32.png"
                     )
                 ]
             ),
@@ -216,24 +261,132 @@ class UpgradeManager:
                         level=1,
                         effects={'health_regen': 1},
                         description="每秒回复1点生命值",
-                        icon_path="images/passives/health_regen1.png"
+                        icon_path="images/passives/heal_up_32x32.png"
                     ),
                     PassiveUpgradeLevel(
                         name="生命回复",
                         level=2,
                         effects={'health_regen': 2},
                         description="每秒回复2点生命值",
-                        icon_path="images/passives/health_regen2.png"
+                        icon_path="images/passives/heal_up_32x32.png"
                     ),
                     PassiveUpgradeLevel(
                         name="生命回复",
                         level=3,
                         effects={'health_regen': 3},
                         description="每秒回复3点生命值",
-                        icon_path="images/passives/health_regen3.png"
+                        icon_path="images/passives/heal_up_32x32.png"
                     )
                 ]
-            )
+            ),
+            'luck': PassiveUpgrade(
+                name="幸运",
+                max_level=3,
+                levels=[
+                    PassiveUpgradeLevel(
+                        name="幸运",
+                        level=1,
+                        effects={'luck': 0.5},
+                        description="幸运值提升50%",
+                        icon_path="images/passives/lucky_up_32x32.png"
+                    ),
+                    PassiveUpgradeLevel(
+                        name="幸运",
+                        level=2,
+                        effects={'luck': 1},
+                        description="幸运值提升100%",
+                        icon_path="images/passives/lucky_up_32x32.png"
+                    ),
+                    PassiveUpgradeLevel(
+                        name="幸运",
+                        level=3,
+                        effects={'luck': 1.5},
+                        description="幸运值提升150%",
+                        icon_path="images/passives/lucky_up_32x32.png"
+                    )
+                ]
+            ),
+            'attack_power': PassiveUpgrade(
+                name="攻击力",
+                max_level=3,
+                levels=[
+                    PassiveUpgradeLevel(
+                        name="攻击力",
+                        level=1,
+                        effects={'attack_power': 0.1},
+                        description="攻击力提升10%",
+                        icon_path="images/passives/damage_up_32x32.png"
+                    ),
+                    PassiveUpgradeLevel(
+                        name="攻击力",
+                        level=2,
+                        effects={'attack_power': 0.2},
+                        description="攻击力提升20%",
+                        icon_path="images/passives/damage_up_32x32.png"
+                    ),
+                    PassiveUpgradeLevel(
+                        name="攻击力",
+                        level=3,
+                        effects={'attack_power': 0.3},
+                        description="攻击力提升30%",
+                        icon_path="images/passives/damage_up_32x32.png"
+                    )
+                ]
+            ),
+            'defense': PassiveUpgrade(
+                name="防御力",
+                max_level=3,
+                levels=[
+                    PassiveUpgradeLevel(
+                        name="防御力",
+                        level=1,
+                        effects={'defense': 0.1},
+                        description="防御力提升10%",
+                        icon_path="images/passives/defense_up_32x32.png"
+                    ),
+                    PassiveUpgradeLevel(
+                        name="防御力",
+                        level=2,
+                        effects={'defense': 0.2},
+                        description="防御力提升20%",
+                        icon_path="images/passives/defense_up_32x32.png"
+                    ),
+                    PassiveUpgradeLevel(
+                        name="防御力",
+                        level=3,
+                        effects={'defense': 0.3},
+                        description="防御力提升30%",
+                        icon_path="images/passives/defense_up_32x32.png"
+                    )
+                ]
+            ),
+            'pickup_range': PassiveUpgrade(
+                name="拾取范围",
+                max_level=3,
+                levels=[
+                    PassiveUpgradeLevel(
+                        name="拾取范围",
+                        level=1,
+                        effects={'pickup_range': 25},
+                        description="拾取范围增加25",
+                        icon_path="images/passives/pickup_range_up_32x32.png"
+                    ),
+                    PassiveUpgradeLevel(
+                        name="拾取范围",
+                        level=2,
+                        effects={'pickup_range': 50},
+                        description="拾取范围增加50",
+                        icon_path="images/passives/pickup_range_up_32x32.png"
+                    ),
+                    PassiveUpgradeLevel(
+                        name="拾取范围",
+                        level=3,
+                        effects={'pickup_range': 100},
+                        description="拾取范围增加100",
+                        icon_path="images/passives/pickup_range_up_32x32.png"
+                    )
+                ]
+            )    
         }
         
     def get_random_upgrades(self, player, count=3):

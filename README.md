@@ -1,6 +1,7 @@
 # 游戏名字还没想好
 
 这是一个使用 Cursor + Pygame 开发的2D像素风肉鸽游戏。边玩边学。
+
 **（50% cursor聊天与生成 + 15% debug + 15% codereview + 10% 找素材 + 4% 开开脑洞 + 4% 等待时玩手机 + 1% 写一些没有意义的README）**
 
 ## 项目结构
@@ -92,7 +93,7 @@ python src/main.py
 - [x] 添加经验值系统
   - [x] 经验槽与经验值计算
   - [x] 与升级界面联动 
-  - [ ] 升级效果关联武器和被动属性
+  - [x] 添加被动升级：攻击力、防御力、速度、生命恢复、幸运、拾取半径。
 - [x] 添加升级选择界面
   - [x] 支持随机升级三选一
   - [ ] 升级选项实现 
@@ -114,4 +115,4 @@ python src/main.py
 ## 致谢
 素材：
 - Ninja_Frog\Ghost\Bat\Radish 来自：[pixel-adventure](https://pixelfrog-assets.itch.io/pixel-adventure-1)
-- weapons image 来自：[raven-fantasy-icons](https://clockworkraven.itch.io/raven-fantasy-icons)
+- weapons\passives image 来自：[raven-fantasy-icons](https://clockworkraven.itch.io/raven-fantasy-icons)

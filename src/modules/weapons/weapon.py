@@ -18,6 +18,16 @@ class Weapon(pygame.sprite.Sprite):
         self.attack_timer = 0
         self.attack_interval = 1.0 / self.current_stats.get('attack_speed', 1.0)
         
+        # 应用玩家的攻击力加成
+        self._apply_player_attack_power()
+        
+    def _apply_player_attack_power(self):
+        """应用玩家的攻击力加成到武器伤害"""
+        if 'damage' in self.current_stats:
+            # 使用当前伤害值乘以玩家攻击力加成
+            current_damage = self.current_stats['damage']
+            self.current_stats['damage'] = int(current_damage * self.player.attack_power)
+        
     def apply_effects(self, effects):
         """应用升级效果"""
         # 保存旧的攻击间隔用于比较
@@ -40,6 +50,9 @@ class Weapon(pygame.sprite.Sprite):
         new_attack_speed = self.current_stats.get('attack_speed', 1.0)
         if new_attack_speed != old_attack_speed:
             self.attack_interval = 1.0 / new_attack_speed
+            
+        # 在应用效果后重新应用玩家的攻击力加成
+        self._apply_player_attack_power()
             
     def can_attack(self):
         """检查是否可以攻击"""
