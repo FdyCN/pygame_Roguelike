@@ -164,7 +164,7 @@ class UpgradeManager:
                             'cooldown': 1.5
                         },
                         description="发射冰锥，造成单体伤害并减速敌人",
-                        icon_path="images/weapons/fireball_32x32.png"
+                        icon_path="images/weapons/nova_32x32.png"
                     ),
                     WeaponUpgradeLevel(
                         name="冰锥术",
@@ -177,7 +177,7 @@ class UpgradeManager:
                             'cooldown': 1.5
                         },
                         description="造成爆炸范围和减速",
-                        icon_path="images/weapons/fireball_32x32.png"
+                        icon_path="images/weapons/nova_32x32.png"
                     ),
                     WeaponUpgradeLevel(
                         name="冰锥术",
@@ -190,7 +190,7 @@ class UpgradeManager:
                             'cooldown': 1.2
                         },
                         description="提升伤害和减速效果，减少冷却时间",
-                        icon_path="images/weapons/fireball_32x32.png"
+                        icon_path="images/weapons/nova_32x32.png"
                     )
                 ]
             )

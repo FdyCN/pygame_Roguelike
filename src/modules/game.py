@@ -356,7 +356,7 @@ class Game:
         self.player.render_weapons(self.screen, self.camera_x, self.camera_y)
         # 渲染UI
         if self.player:
-            self.ui.render(self.player)
+            self.ui.render(self.player, self.game_time)
             
         # 如果游戏暂停，渲染暂停菜单
         if self.paused:
@@ -394,6 +394,7 @@ class Game:
         
     def _check_collisions(self):
         # 检测武器和敌人的碰撞
+        # TODO: 添加fireball\nova碰撞检测
         for weapon in self.player.weapons:
             # 对于每个投掷出去的小刀
             for thrown_knife in weapon.thrown_knives:

@@ -200,18 +200,6 @@ class Player(pygame.sprite.Sprite):
         if not self.invincible or self.visible:
             screen.blit(self.image, self.rect)
         
-        # 绘制血条
-        health_bar_width = 32
-        health_bar_height = 5
-        health_ratio = self.health / self.max_health
-        
-        pygame.draw.rect(screen, (255, 0, 0),  # 红色背景
-                        (self.rect.x, self.rect.y - 10,
-                         health_bar_width, health_bar_height))
-        pygame.draw.rect(screen, (0, 255, 0),  # 绿色血条
-                        (self.rect.x, self.rect.y - 10,
-                         health_bar_width * health_ratio, health_bar_height))
-        
     def take_damage(self, amount):
         # 如果处于无敌状态，不受伤害
         if self.invincible:
