@@ -78,8 +78,10 @@ class ResourceManager:
         self.fonts = {}   # 存储字体资源
         self.animations = {}  # 存储动画资源
         
-        # 资源根目录
-        self.resource_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "assets")
+        # 资源根目录，使用规范化的路径
+        current_file = os.path.abspath(__file__)
+        src_dir = os.path.dirname(os.path.dirname(os.path.dirname(current_file)))
+        self.resource_dir = os.path.normpath(os.path.join(src_dir, "assets"))
         
     def load_image(self, name: str, file_path: str) -> pygame.Surface:
         """加载图片资源
@@ -94,7 +96,8 @@ class ResourceManager:
         if name in self.images:
             return self.images[name]
             
-        full_path = os.path.join(self.resource_dir, file_path)
+        # 规范化路径，确保在所有操作系统上都能正确工作
+        full_path = os.path.normpath(os.path.join(self.resource_dir, file_path))
         try:
             image = pygame.image.load(full_path).convert_alpha()
             self.images[name] = image
@@ -122,7 +125,8 @@ class ResourceManager:
         if name in self.sounds:
             return self.sounds[name]
             
-        full_path = os.path.join(self.resource_dir, file_path)
+        # 规范化路径，确保在所有操作系统上都能正确工作
+        full_path = os.path.normpath(os.path.join(self.resource_dir, file_path))
         try:
             sound = pygame.mixer.Sound(full_path)
             self.sounds[name] = sound
@@ -146,7 +150,8 @@ class ResourceManager:
         if name in self.music:
             return self.music[name]
             
-        full_path = os.path.join(self.resource_dir, file_path)
+        # 规范化路径，确保在所有操作系统上都能正确工作
+        full_path = os.path.normpath(os.path.join(self.resource_dir, file_path))
         if os.path.exists(full_path):
             self.music[name] = full_path
             return full_path

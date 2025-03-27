@@ -307,10 +307,19 @@ class Player(pygame.sprite.Sprite):
             return weapon
         return None
 
-    def update_weapons(self, dt):
-        """更新所有武器状态"""
+    def update_weapons(self, dt, enemies=None):
+        """更新所有武器状态
+        
+        Args:
+            dt: 时间增量
+            enemies: 敌人列表，用于武器追踪
+        """
         for weapon in self.weapons:
-            weapon.update(dt)
+            if hasattr(weapon, 'update'):
+                if enemies is not None and (isinstance(weapon, Fireball) or isinstance(weapon, FrostNova)):
+                    weapon.update(dt, enemies)
+                else:
+                    weapon.update(dt)
 
     def render_weapons(self, screen, camera_x, camera_y):
         """渲染所有武器"""

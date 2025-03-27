@@ -313,7 +313,7 @@ class Game:
         
         # 更新其他游戏对象
         self.enemy_manager.update(dt, self.player)
-        self.player.update_weapons(dt)
+        self.player.update_weapons(dt, self.enemy_manager.enemies)
         self.item_manager.update(dt, self.player)
         
         # 检测碰撞
@@ -394,20 +394,44 @@ class Game:
         
     def _check_collisions(self):
         # 检测武器和敌人的碰撞
-        # TODO: 添加fireball\nova碰撞检测
         for weapon in self.player.weapons:
-            # 对于每个投掷出去的小刀
-            for thrown_knife in weapon.thrown_knives:
-                for enemy in self.enemy_manager.enemies:
-                    # 计算世界坐标系中的距离
-                    dx = enemy.rect.x - thrown_knife.world_x
-                    dy = enemy.rect.y - thrown_knife.world_y
-                    distance = (dx**2 + dy**2)**0.5
-                    
-                    if distance < enemy.rect.width / 2 + thrown_knife.rect.width / 2:
-                        if thrown_knife.can_damage_enemy(enemy):
-                            thrown_knife.register_hit(enemy)
-                            enemy.take_damage(thrown_knife.damage)
+            # 检测飞刀碰撞
+            if hasattr(weapon, 'thrown_knives'):
+                for thrown_knife in weapon.thrown_knives:
+                    for enemy in self.enemy_manager.enemies:
+                        # 计算世界坐标系中的距离
+                        dx = enemy.rect.x - thrown_knife.world_x
+                        dy = enemy.rect.y - thrown_knife.world_y
+                        distance = (dx**2 + dy**2)**0.5
+                        
+                        if distance < enemy.rect.width / 2 + thrown_knife.rect.width / 2:
+                            if thrown_knife.can_damage_enemy(enemy):
+                                thrown_knife.register_hit(enemy)
+                                enemy.take_damage(thrown_knife.damage)
+                                # 播放击中音效
+                                resource_manager.play_sound("hit")
+                                if enemy.health <= 0:
+                                    self.score += enemy.score_value
+                                    # 在敌人死亡位置生成物品，传递player对象以应用幸运值加成
+                                    self.item_manager.spawn_item(enemy.rect.x, enemy.rect.y, enemy.type, self.player)
+                                    self.enemy_manager.remove_enemy(enemy)
+                                    # 播放敌人死亡音效
+                                    resource_manager.play_sound("enemy_death")
+                                    # 如果武器不能穿透，则销毁它
+                                    if not thrown_knife.penetration:
+                                        thrown_knife.kill()
+            
+            # 检测火球碰撞
+            if hasattr(weapon, 'projectiles'):
+                for projectile in weapon.projectiles:
+                    for enemy in self.enemy_manager.enemies:
+                        # 计算世界坐标系中的距离
+                        dx = enemy.rect.x - projectile.world_x
+                        dy = enemy.rect.y - projectile.world_y
+                        distance = (dx**2 + dy**2)**0.5
+                        
+                        if distance < enemy.rect.width / 2 + projectile.rect.width / 2:
+                            enemy.take_damage(projectile.damage)
                             # 播放击中音效
                             resource_manager.play_sound("hit")
                             if enemy.health <= 0:
@@ -417,12 +441,30 @@ class Game:
                                 self.enemy_manager.remove_enemy(enemy)
                                 # 播放敌人死亡音效
                                 resource_manager.play_sound("enemy_death")
-                            # 如果武器不能穿透，则销毁它
-                            if not thrown_knife.penetration:
-                                thrown_knife.kill()
-                        else:
-                            # DO NOTHING
-                            pass
+                            projectile.kill()
+            
+            # 检测冰霜新星碰撞
+            if hasattr(weapon, 'effects'):
+                for effect in weapon.effects:
+                    for enemy in self.enemy_manager.enemies:
+                        # 计算世界坐标系中的距离
+                        dx = enemy.rect.x - effect.world_x
+                        dy = enemy.rect.y - effect.world_y
+                        distance = (dx**2 + dy**2)**0.5
+                        
+                        if distance < enemy.rect.width / 2 + effect.rect.width / 2:
+                            enemy.take_damage(effect.damage)
+                            # 应用减速效果
+                            enemy.speed *= (1 - effect.slow_amount)
+                            # 播放击中音效
+                            resource_manager.play_sound("hit")
+                            if enemy.health <= 0:
+                                self.score += enemy.score_value
+                                # 在敌人死亡位置生成物品，传递player对象以应用幸运值加成
+                                self.item_manager.spawn_item(enemy.rect.x, enemy.rect.y, enemy.type, self.player)
+                                self.enemy_manager.remove_enemy(enemy)
+                                # 播放敌人死亡音效
+                                resource_manager.play_sound("enemy_death")
         
         # 检测玩家和敌人的碰撞
         for enemy in self.enemy_manager.enemies:
