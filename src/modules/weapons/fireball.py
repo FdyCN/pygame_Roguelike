@@ -22,11 +22,11 @@ class FireballProjectile(pygame.sprite.Sprite):
         
         # 投射物属性
         self.damage = stats.get('damage', 30)
-        self.speed = stats.get('projectile_speed', 300)
+        self.speed = float(stats.get('projectile_speed', 300))  # 确保速度是浮点数
         
         # 初始化方向
-        self.direction_x = 0
-        self.direction_y = 0
+        self.direction_x = 0.0
+        self.direction_y = 0.0
         
         self.explosion_radius = stats.get('explosion_radius', 50)
         self.burn_damage = stats.get('burn_damage', 5)
@@ -52,13 +52,13 @@ class FireballProjectile(pygame.sprite.Sprite):
             distance = math.sqrt(dx * dx + dy * dy)
             
             if distance > 0:
-                # 更新方向向量
+                # 更新方向向量（确保是标准化的单位向量）
                 self.direction_x = dx / distance
                 self.direction_y = dy / distance
                 
                 # 更新图像旋转
-                angle = math.degrees(math.atan2(-dy, dx))
-                self.image = pygame.transform.rotate(self.base_image, -angle)
+                angle = math.degrees(math.atan2(-dy, dx))  # 注意：pygame的y轴是向下的，所以需要取负
+                self.image = pygame.transform.rotate(self.base_image, angle)
                 # 保持旋转后的图像中心点不变
                 new_rect = self.image.get_rect()
                 new_rect.center = self.rect.center
@@ -68,13 +68,13 @@ class FireballProjectile(pygame.sprite.Sprite):
         # 更新方向（追踪目标）
         self._update_direction()
         
-        # 更新位置
+        # 更新位置（使用浮点数计算）
         self.world_x += self.direction_x * self.speed * dt
         self.world_y += self.direction_y * self.speed * dt
         
         # 更新碰撞盒位置
-        self.rect.centerx = self.world_x
-        self.rect.centery = self.world_y
+        self.rect.centerx = round(self.world_x)
+        self.rect.centery = round(self.world_y)
         
         # 更新动画
         self.pulse_time = (self.pulse_time + dt) % self.pulse_duration
@@ -116,7 +116,10 @@ class Fireball(Weapon):
             'burn_duration': 3.0,
             'lifetime': 2.0,
             'fireballs_per_cast': 1,
-            'spread_angle': 20
+            'spread_angle': 20,
+            'can_penetrate': False,  # 默认不能穿透
+            'max_penetration': 1,    # 最大穿透次数
+            'penetration_damage_reduction': 0.3  # 穿透后伤害降低30%
         }
         
         super().__init__(player, 'fireball', base_stats)

@@ -3,86 +3,118 @@ import math
 from ..resource_manager import resource_manager
 from .weapon import Weapon
 
-class FrostNovaEffect(pygame.sprite.Sprite):
+class FrostNovaProjectile(pygame.sprite.Sprite):
     def __init__(self, x, y, target, stats):
         super().__init__()
-        self.image = resource_manager.load_image('weapon_frost_nova', 'images/weapons/nova_32x32.png')
+        # 加载基础图像
+        self.base_image = resource_manager.load_image('weapon_frost_nova', 'images/weapons/nova_32x32.png')
+        self.image = self.base_image
         self.rect = self.image.get_rect()
-        self.rect.center = (x, y)
         
-        # 位置信息
+        # 位置信息（世界坐标）
         self.world_x = float(x)
         self.world_y = float(y)
+        self.rect.centerx = self.world_x
+        self.rect.centery = self.world_y
         
         # 目标信息
         self.target = target
         
-        # 效果属性
+        # 投射物属性
         self.damage = stats.get('damage', 25)
-        self.slow_amount = stats.get('slow_amount', 0.5)  # 减速效果（百分比）
-        self.slow_duration = stats.get('slow_duration', 2.0)  # 减速持续时间
-        self.speed = stats.get('projectile_speed', 250)  # 移动速度
-        
-        # 动画效果
-        self.lifetime = stats.get('lifetime', 2.0)  # 存活时间
-        self.current_time = 0
-        self.alpha = 255  # 透明度
-        self.scale = 0.5  # 初始大小
+        self.speed = float(stats.get('projectile_speed', 250))  # 确保速度是浮点数
         
         # 初始化方向
-        self.direction_x = 0
-        self.direction_y = 0
+        self.direction_x = 0.0
+        self.direction_y = 0.0
+        
+        # 冰霜特有属性
+        self.slow_amount = stats.get('slow_amount', 0.5)
+        self.slow_duration = stats.get('slow_duration', 2.0)
+        
+        # 存活时间
+        self.lifetime = stats.get('lifetime', 2.0)
+        
+        # 动画效果
+        self.scale = 1.0
+        self.pulse_time = 0
+        self.pulse_duration = 0.5
+        
+        # 初始方向
         self._update_direction()
         
     def _update_direction(self):
         """更新朝向目标的方向"""
         if self.target and self.target.alive():
-            dx = self.target.rect.x - self.world_x
-            dy = self.target.rect.y - self.world_y
+            # 使用世界坐标计算方向
+            dx = self.target.rect.centerx - self.world_x
+            dy = self.target.rect.centery - self.world_y
             distance = math.sqrt(dx * dx + dy * dy)
+            
             if distance > 0:
+                # 更新方向向量（确保是标准化的单位向量）
                 self.direction_x = dx / distance
                 self.direction_y = dy / distance
+                
+                # 更新图像旋转
+                angle = math.degrees(math.atan2(-dy, dx))  # 注意：pygame的y轴是向下的，所以需要取负
+                self.image = pygame.transform.rotate(self.base_image, angle)
+                # 保持旋转后的图像中心点不变
+                new_rect = self.image.get_rect()
+                new_rect.center = self.rect.center
+                self.rect = new_rect
         
     def update(self, dt):
-        self.current_time += dt
-        
-        if self.current_time >= self.lifetime:
-            self.kill()
-            return
-            
-        # 更新方向和位置
+        # 更新方向（追踪目标）
         self._update_direction()
+        
+        # 更新位置（使用浮点数计算）
         self.world_x += self.direction_x * self.speed * dt
         self.world_y += self.direction_y * self.speed * dt
-        self.rect.center = (self.world_x, self.world_y)
         
-        # 更新透明度
-        self.alpha = int(255 * (1 - self.current_time / self.lifetime))
+        # 更新碰撞盒位置
+        self.rect.centerx = round(self.world_x)
+        self.rect.centery = round(self.world_y)
         
+        # 更新动画
+        self.pulse_time = (self.pulse_time + dt) % self.pulse_duration
+        self.scale = 1.0 + 0.2 * math.sin(self.pulse_time * 2 * math.pi / self.pulse_duration)
+        
+        # 更新存活时间
+        self.lifetime -= dt
+        if self.lifetime <= 0:
+            self.kill()
+            
     def render(self, screen, camera_x, camera_y):
         # 计算屏幕位置
-        screen_x = self.world_x - camera_x + screen.get_width() // 2 - self.rect.width // 2
-        screen_y = self.world_y - camera_y + screen.get_height() // 2 - self.rect.height // 2
+        screen_x = self.world_x - camera_x + screen.get_width() // 2
+        screen_y = self.world_y - camera_y + screen.get_height() // 2
         
-        # 创建一个临时surface用于设置透明度
-        temp_surface = self.image.copy()
-        temp_surface.set_alpha(self.alpha)
+        # 缩放图像
+        scaled_size = (int(self.image.get_width() * self.scale),
+                      int(self.image.get_height() * self.scale))
+        scaled_image = pygame.transform.scale(self.image, scaled_size)
         
-        # 绘制特效
-        screen.blit(temp_surface, (screen_x, screen_y))
+        # 调整绘制位置以保持中心点不变
+        draw_x = screen_x - scaled_image.get_width() / 2
+        draw_y = screen_y - scaled_image.get_height() / 2
+        screen.blit(scaled_image, (draw_x, draw_y))
 
 class FrostNova(Weapon):
     def __init__(self, player):
         # 定义基础属性
         base_stats = {
-            'damage': 25, 
+            'damage': 25,
             'attack_speed': 0.5,
             'projectile_speed': 250,
             'slow_amount': 0.5,
             'slow_duration': 2.0,
             'lifetime': 2.0,
-            'nova_count': 1  # 同时释放的新星数量
+            'novas_per_cast': 1,  # 同时释放的新星数量
+            'spread_angle': 20,
+            'can_penetrate': False,  # 默认不能穿透
+            'max_penetration': 1,    # 最大穿透次数
+            'penetration_damage_reduction': 0.4  # 穿透后伤害降低40%
         }
         
         super().__init__(player, 'frost_nova', base_stats)
@@ -91,8 +123,8 @@ class FrostNova(Weapon):
         self.image = resource_manager.load_image('weapon_frost_nova', 'images/weapons/nova_32x32.png')
         self.rect = self.image.get_rect()
         
-        # 特效列表
-        self.effects = pygame.sprite.Group()
+        # 投射物列表
+        self.projectiles = pygame.sprite.Group()
         
         # 加载音效
         resource_manager.load_sound('frost_nova_cast', 'sounds/weapons/frost_nova_cast.wav')
@@ -116,43 +148,52 @@ class FrostNova(Weapon):
     def update(self, dt, enemies):
         super().update(dt)
         
-        # 检查是否可以释放冰霜新星
+        # 检查是否可以施放冰霜新星
         if self.can_attack():
             self.attack_timer = 0
-            self.cast_frost_nova(enemies)
+            self.cast_novas(enemies)
             
-        # 更新所有特效
-        self.effects.update(dt)
+        # 更新所有冰霜新星
+        self.projectiles.update(dt)
         
-    def cast_frost_nova(self, enemies):
-        """释放冰霜新星"""
+    def cast_novas(self, enemies):
+        """施放冰霜新星"""
         target = self.find_nearest_enemy(enemies)
         if not target:
             return
             
-        nova_count = int(self.current_stats['nova_count'])
+        nova_count = int(self.current_stats['novas_per_cast'])
         
-        # 在玩家周围创建多个新星
-        for i in range(nova_count):
-            # 如果有多个新星，在玩家周围随机位置生成
-            if nova_count > 1:
-                offset_angle = (i / nova_count) * 2 * math.pi
-                offset_distance = 30  # 固定偏移距离
-                offset_x = math.cos(offset_angle) * offset_distance
-                offset_y = math.sin(offset_angle) * offset_distance
-                x = self.player.world_x + offset_x
-                y = self.player.world_y + offset_y
-            else:
-                x = self.player.world_x
-                y = self.player.world_y
-                
-            effect = FrostNovaEffect(x, y, target, self.current_stats)
-            self.effects.add(effect)
+        if nova_count > 1:
+            # 计算扇形分布
+            spread_angle = self.current_stats['spread_angle']
+            angle_step = spread_angle / (nova_count - 1)
+            base_angle = math.degrees(math.atan2(
+                target.world_y - self.player.world_y,
+                target.world_x - self.player.world_x
+            ))
+            start_angle = base_angle - spread_angle / 2
+            
+            for i in range(nova_count):
+                self._cast_single_nova(target)
+        else:
+            # 单个新星直接施放
+            self._cast_single_nova(target)
             
         # 播放施法音效
         resource_manager.play_sound('frost_nova_cast')
         
+    def _cast_single_nova(self, target):
+        """施放单个冰霜新星"""
+        nova = FrostNovaProjectile(
+            self.player.world_x,
+            self.player.world_y,
+            target,
+            self.current_stats
+        )
+        self.projectiles.add(nova)
+        
     def render(self, screen, camera_x, camera_y):
-        # 渲染所有特效
-        for effect in self.effects:
-            effect.render(screen, camera_x, camera_y) 
+        # 渲染所有冰霜新星
+        for nova in self.projectiles:
+            nova.render(screen, camera_x, camera_y) 

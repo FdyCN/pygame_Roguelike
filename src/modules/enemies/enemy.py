@@ -23,6 +23,9 @@ class Enemy(pygame.sprite.Sprite, ABC):
         self.speed = speed
         self.score_value = 10  # 默认分数值，子类可以修改
         
+        # 存活状态
+        self._alive = True
+        
         # 攻击冷却
         self.attack_cooldown = 0
         self.attack_cooldown_time = 0.5  # 攻击冷却时间（秒）
@@ -186,3 +189,16 @@ class Enemy(pygame.sprite.Sprite, ABC):
             player.take_damage(self.damage)
             return True
         return False
+
+    def kill(self):
+        """重写 kill 方法，确保正确处理存活状态"""
+        self._alive = False
+        super().kill()
+        
+    def alive(self):
+        """返回敌人是否存活
+        
+        Returns:
+            bool: 如果敌人还活着返回 True，否则返回 False
+        """
+        return self._alive and self.health > 0

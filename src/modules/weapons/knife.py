@@ -29,7 +29,6 @@ class ThrownKnife(pygame.sprite.Sprite):
         self.direction_y = direction_y
         self.damage = stats.get('damage', 20)
         self.speed = stats.get('projectile_speed', 400)
-        self.penetration = stats.get('penetration', True)
         
         # 投掷动画相关
         self.throw_time = 0
@@ -39,22 +38,8 @@ class ThrownKnife(pygame.sprite.Sprite):
         # 存活时间
         self.lifetime = stats.get('lifetime', 3.0)
         
-        # 记录已经击中的敌人
-        self.hit_enemies = set()
-        
-    def can_damage_enemy(self, enemy):
-        """检查是否可以对敌人造成伤害"""
-        # 如果敌人已经被击中过，且武器不能穿透，返回False
-        if enemy in self.hit_enemies:
-            return False
-        return True
-        
-    def register_hit(self, enemy):
-        """记录对敌人的命中"""
-        self.hit_enemies.add(enemy)
-        # 如果武器不能穿透，则在击中后销毁
-        if not self.penetration:
-            self.kill()
+        # 初始化命中计数
+        self.hit_count = 0
         
     def update(self, dt):
         # 更新投掷动画进度
@@ -77,8 +62,8 @@ class ThrownKnife(pygame.sprite.Sprite):
             self.world_y += self.direction_y * self.speed * dt
             
         # 更新碰撞盒位置
-        self.rect.centerx = self.world_x
-        self.rect.centery = self.world_y
+        self.rect.centerx = round(self.world_x)
+        self.rect.centery = round(self.world_y)
         
         # 更新存活时间
         self.lifetime -= dt
@@ -119,11 +104,13 @@ class Knife(Weapon):
         # 定义基础属性
         base_stats = {
             'damage': 20,
-            'attack_speed': 1.0,  # 对应cooldown的倒数
+            'attack_speed': 1.0,
             'projectile_speed': 400,
-            'penetration': False,  # 与1级飞刀一致
-            'knives_per_throw': 1,  # 对应count
-            'spread_angle': 0,  # 对应spread
+            'can_penetrate': False,  # 默认不能穿透
+            'max_penetration': 100,    # 最大穿透次数
+            'penetration_damage_reduction': 0.2,  # 穿透后伤害降低20%
+            'knives_per_throw': 1,
+            'spread_angle': 0,
             'lifetime': 3.0
         }
         
@@ -132,9 +119,6 @@ class Knife(Weapon):
         # 加载武器图像
         self.image = resource_manager.load_image('weapon_knife', 'images/weapons/knife_32x32.png')
         self.rect = self.image.get_rect()
-        
-        # 投掷的小刀列表
-        self.thrown_knives = pygame.sprite.Group()
         
         # 加载攻击音效
         resource_manager.load_sound('knife_throw', 'sounds/weapons/knife_throw.wav')
@@ -148,7 +132,7 @@ class Knife(Weapon):
             self.throw_knives()
             
         # 更新已投掷的小刀
-        self.thrown_knives.update(dt)
+        self.projectiles.update(dt)
         
     def throw_knives(self):
         """投掷小刀"""
@@ -183,9 +167,9 @@ class Knife(Weapon):
             direction_y,
             self.current_stats
         )
-        self.thrown_knives.add(knife)
+        self.projectiles.add(knife)
         
     def render(self, screen, camera_x, camera_y):
         # 渲染所有投掷出去的小刀
-        for knife in self.thrown_knives:
+        for knife in self.projectiles:
             knife.render(screen, camera_x, camera_y)

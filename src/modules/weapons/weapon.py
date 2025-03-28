@@ -1,6 +1,11 @@
 import pygame
 from ..resource_manager import resource_manager
+from enum import Enum, auto
 
+class WeaponType(Enum):
+    MELEE = auto()      # 近战武器
+    PROJECTILE = auto() # 投射物武器
+    
 class Weapon(pygame.sprite.Sprite):
     def __init__(self, player, weapon_type, base_stats):
         super().__init__()
@@ -18,8 +23,45 @@ class Weapon(pygame.sprite.Sprite):
         self.attack_timer = 0
         self.attack_interval = 1.0 / self.current_stats.get('attack_speed', 1.0)
         
+        # 投射物列表（如果是投射物类型的武器）
+        self.projectiles = pygame.sprite.Group()
+        
         # 应用玩家的攻击力加成
         self._apply_player_attack_power()
+        
+    def get_projectiles(self):
+        """获取武器的投射物列表，如果没有则返回空列表"""
+        return self.projectiles if hasattr(self, 'projectiles') else pygame.sprite.Group()
+        
+    def handle_collision(self, projectile, enemy):
+        """处理武器投射物与敌人的碰撞
+        
+        Args:
+            projectile: 武器的投射物
+            enemy: 被击中的敌人
+            
+        Returns:
+            bool: 是否应该销毁投射物
+        """
+        # 默认实现，子类可以重写
+        enemy.take_damage(projectile.damage)
+        
+        # 检查穿透属性
+        can_penetrate = self.current_stats.get('can_penetrate', False)
+        max_penetration = self.current_stats.get('max_penetration', 1)
+        
+        # 如果没有 hit_count 属性，添加它
+        if not hasattr(projectile, 'hit_count'):
+            projectile.hit_count = 0
+        projectile.hit_count += 1
+        
+        # 如果可以穿透且未达到最大穿透次数，继续保持投射物
+        if can_penetrate and projectile.hit_count < max_penetration:
+            # 每次穿透后降低伤害（如果有设置）
+            if 'penetration_damage_reduction' in self.current_stats:
+                projectile.damage *= (1 - self.current_stats['penetration_damage_reduction'])
+            return False
+        return True
         
     def _apply_player_attack_power(self):
         """应用玩家的攻击力加成到武器伤害"""

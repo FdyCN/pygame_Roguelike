@@ -29,7 +29,7 @@ class TestUpgrades(unittest.TestCase):
             'damage': 20,
             'attack_speed': 1.0,
             'projectile_speed': 400,
-            'penetration': False,
+            'can_penetrate': False,
             'knives_per_throw': 1,
             'spread_angle': 0,
             'lifetime': 3.0
@@ -54,7 +54,7 @@ class TestUpgrades(unittest.TestCase):
             'damage': 20,
             'attack_speed': 1.1,
             'projectile_speed': 400,
-            'penetration': False,
+            'can_penetrate': False,
             'knives_per_throw': 2,
             'spread_angle': 15,
             'lifetime': 3.0
@@ -79,7 +79,7 @@ class TestUpgrades(unittest.TestCase):
             'damage': 30,
             'attack_speed': 1.25,
             'projectile_speed': 400,
-            'penetration': True,
+            'can_penetrate': True,
             'knives_per_throw': 2,
             'spread_angle': 15,
             'lifetime': 3.0
