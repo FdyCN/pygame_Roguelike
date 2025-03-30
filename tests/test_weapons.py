@@ -250,6 +250,61 @@ class TestWeapons(unittest.TestCase):
         initial_speed = enemy.speed
         enemy.speed *= (1 - effect.slow_amount)
         self.assertLess(enemy.speed, initial_speed)
+        
+    def test_knife_penetration(self):
+        """测试三级飞刀的穿透效果"""
+        # 创建三个敌人，排成一条直线
+        enemy1 = MockEnemy(450, 300)  # 第一个敌人
+        enemy2 = MockEnemy(500, 300)  # 第二个敌人
+        enemy3 = MockEnemy(550, 300)  # 第三个敌人
+        enemies = [enemy1, enemy2, enemy3]
+        
+        # 创建飞刀并设置三级属性
+        knife = Knife(self.player)
+        knife.current_stats.update({
+            WeaponStatType.DAMAGE: 30,
+            WeaponStatType.ATTACK_SPEED: 1.25,
+            WeaponStatType.CAN_PENETRATE: True,
+            WeaponStatType.MAX_PENETRATION: 3,
+            WeaponStatType.PENETRATION_DAMAGE_REDUCTION: 0.2
+        })
+        
+        # 设置玩家朝向右边
+        self.player.direction.x = 1
+        self.player.direction.y = 0
+        
+        # 投掷飞刀
+        knife.throw_knives()
+        thrown = list(knife.projectiles)[0]
+        
+        # 记录初始伤害
+        initial_damage = thrown.damage
+        
+        # 测试第一个敌人
+        knife.handle_collision(thrown, enemy1)
+        self.assertEqual(enemy1.damage_taken, initial_damage)
+        self.assertFalse(thrown.hit_count >= thrown.max_penetration)
+        self.assertEqual(thrown.damage, initial_damage * 0.8)  # 伤害降低20%
+        
+        # 测试第二个敌人
+        knife.handle_collision(thrown, enemy2)
+        self.assertEqual(enemy2.damage_taken, initial_damage * 0.8)
+        self.assertFalse(thrown.hit_count >= thrown.max_penetration)
+        self.assertEqual(int(thrown.damage), int(initial_damage * 0.64))  # 伤害再降低20%
+        
+        # 测试第三个敌人
+        knife.handle_collision(thrown, enemy3)
+        self.assertEqual(int(enemy3.damage_taken), int(initial_damage * 0.64))
+        self.assertTrue(thrown.hit_count >= thrown.max_penetration)
+        
+        # 验证所有敌人都受到了伤害
+        self.assertGreater(enemy1.damage_taken, 0)
+        self.assertGreater(enemy2.damage_taken, 0)
+        self.assertGreater(enemy3.damage_taken, 0)
+        
+        # 验证伤害递减
+        self.assertGreater(enemy1.damage_taken, enemy2.damage_taken)
+        self.assertGreater(enemy2.damage_taken, enemy3.damage_taken)
 
     def test_multiple_weapons(self):
         """测试玩家同时装备多个武器"""

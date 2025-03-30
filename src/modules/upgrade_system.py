@@ -98,7 +98,9 @@ class UpgradeManager:
                             WeaponStatType.CAN_PENETRATE: True,
                             WeaponStatType.PROJECTILES_PER_CAST: 2,
                             WeaponStatType.SPREAD_ANGLE: 15,
-                            WeaponStatType.LIFETIME: 3.0
+                            WeaponStatType.LIFETIME: 3.0,
+                            WeaponStatType.MAX_PENETRATION: 10,
+                            WeaponStatType.PENETRATION_DAMAGE_REDUCTION: 0.2
                         },
                         description="飞刀可以穿透敌人，伤害提升",
                         icon_path="images/weapons/knife_32x32.png"
@@ -387,7 +389,20 @@ class UpgradeManager:
                         icon_path="images/passives/absorb_up_32x32.png"
                     )
                 ]
-            )    
+            ),
+            'coins': PassiveUpgrade(
+                name="金币奖励",
+                max_level=1,
+                levels=[
+                    PassiveUpgradeLevel(
+                        name="金币奖励",
+                        level=1,
+                        effects={'coins': 25},
+                        description="获得25金币",
+                        icon_path="images/items/coin_32x32.png"
+                    )
+                ]
+            )        
         }
         
     def get_random_upgrades(self, player, count=3):
@@ -400,47 +415,94 @@ class UpgradeManager:
         Returns:
             list: 升级选项列表
         """
-        available_upgrades = []
+        # 构建候选池
+        candidate_pool = []
         
-        # 获取当前武器的升级选项
+        # 检查是否所有武器和被动都已满级
+        all_maxed = True
+        
+        # 检查武器
         for weapon in player.weapons:
             if weapon.type in self.weapon_upgrades:
                 weapon_upgrade = self.weapon_upgrades[weapon.type]
                 if weapon.level < weapon_upgrade.max_level:
-                    available_upgrades.append(weapon_upgrade.levels[weapon.level])
+                    all_maxed = False
+                    break
+                    
+        # 检查被动
+        if all_maxed:
+            for passive_type in player.passives:
+                if passive_type in self.passive_upgrades:
+                    passive_upgrade = self.passive_upgrades[passive_type]
+                    current_level = player.passive_levels.get(passive_type, 0)
+                    if current_level < passive_upgrade.max_level:
+                        all_maxed = False
+                        break
         
-        # 如果玩家武器数量未达到上限，添加新武器选项
-        if len(player.weapons) < 3:  # 最多3个武器
-            current_weapon_types = {w.type for w in player.weapons}
-            new_weapons = [w for w in self.weapon_upgrades.keys() 
-                         if w not in current_weapon_types]
-            if new_weapons:
-                # 随机选择一个新武器，添加其1级升级选项
-                new_weapon = random.choice(new_weapons)
-                available_upgrades.append(self.weapon_upgrades[new_weapon].levels[0])
+        # 创建一个金币奖励选项
+        coin_reward = self.passive_upgrades['coins'].levels[0]
+
+        # 如果所有武器和被动都满级了，返回金币奖励
+        if all_maxed:
+            return [coin_reward] * count
+            
+        # 检查武器槽和被动槽是否已满
+        weapons_full = len(player.weapons) >= 3
+        passives_full = len(player.passives) >= 3
         
-        # 获取可用的被动升级选项
-        for passive in player.weapons:
-            if passive.type in self.passive_upgrades:
-                passive_upgrade = self.passive_upgrades[passive.type]
-                if passive.level < passive_upgrade.max_level:
-                    available_upgrades.append(passive_upgrade.levels[passive.level])
+        # 如果两个槽都满了，只添加现有武器和被动的升级选项
+        if weapons_full and passives_full:
+            # 添加现有武器的升级选项
+            for weapon in player.weapons:
+                if weapon.type in self.weapon_upgrades:
+                    weapon_upgrade = self.weapon_upgrades[weapon.type]
+                    if weapon.level < weapon_upgrade.max_level:
+                        candidate_pool.append(weapon_upgrade.levels[weapon.level])
+            
+            # 添加现有被动的升级选项
+            for passive_type in player.passives:
+                if passive_type in self.passive_upgrades:
+                    passive_upgrade = self.passive_upgrades[passive_type]
+                    current_level = player.passive_levels.get(passive_type, 0)
+                    if current_level < passive_upgrade.max_level:
+                        candidate_pool.append(passive_upgrade.levels[current_level])
+        else:
+            # 添加所有武器选项
+            for weapon_type, weapon_upgrade in self.weapon_upgrades.items():
+                # 检查玩家是否已有该武器
+                player_weapon = next((w for w in player.weapons if w.type == weapon_type), None)
+                if player_weapon:
+                    # 如果武器未达到最高级，添加下一级升级选项
+                    if player_weapon.level < weapon_upgrade.max_level:
+                        candidate_pool.append(weapon_upgrade.levels[player_weapon.level])
+                elif not weapons_full:
+                    # 如果武器槽未满，添加1级选项
+                    candidate_pool.append(weapon_upgrade.levels[0])
+                    
+            # 添加所有被动选项
+            for passive_type, passive_upgrade in self.passive_upgrades.items():
+                # 检查玩家是否已有该被动
+                current_level = player.passive_levels.get(passive_type, 0)
+                if current_level > 0:
+                    # 如果被动未达到最高级，添加下一级升级选项
+                    if current_level < passive_upgrade.max_level:
+                        candidate_pool.append(passive_upgrade.levels[current_level])
+                elif not passives_full:
+                    # 如果被动槽未满，添加1级选项
+                    candidate_pool.append(passive_upgrade.levels[0])
         
-        # 如果玩家被动数量未达到上限，添加新被动选项
-        if len(player.passives) < 3:  # 最多3个被动
-            current_passive_types = set(player.passives.keys())
-            new_passives = [p for p in self.passive_upgrades.keys() 
-                          if p not in current_passive_types]
-            if new_passives:
-                # 随机选择一个新被动，添加其1级升级选项
-                new_passive = random.choice(new_passives)
-                available_upgrades.append(self.passive_upgrades[new_passive].levels[0])
+        # 如果候选池为空，返回空列表
+        if not candidate_pool:
+            return []
         
-        # 如果可用升级不足count个，随机重复一些选项
-        while len(available_upgrades) < count:
-            if not available_upgrades:  # 如果没有任何可用升级
-                break
-            available_upgrades.append(random.choice(available_upgrades))
+        # 如果候选池数量小于count，则在空位添加金币奖励选项
+        if len(candidate_pool) < count:
+            candidate_pool.append(coin_reward)
+
+        # 从候选池中随机选择指定数量的选项
+        selected_upgrades = random.sample(
+            candidate_pool,
+            min(len(candidate_pool), count)
+        )
         
-        # 随机选择指定数量的升级选项
-        return random.sample(available_upgrades, min(len(available_upgrades), count)) 
+        return selected_upgrades 

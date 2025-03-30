@@ -86,7 +86,14 @@ class Player(pygame.sprite.Sprite):
         # 移动相关
         self.velocity = pygame.math.Vector2()
         self.direction = pygame.math.Vector2()
-        self.moving = {'up': False, 'down': False, 'left': False, 'right': False}
+        self.last_movement_direction = pygame.math.Vector2(1, 0)
+        self.moving = {
+            'up': False, 
+            'down': False, 
+            'left': False, 
+            'right': False
+        }
+        self.current_direction = 'right'  # 当前移动方向
         self.facing_right = True
         
         # 受伤状态
@@ -104,6 +111,39 @@ class Player(pygame.sprite.Sprite):
         # 添加初始武器
         self.add_weapon('knife')
         
+    def _update_movement_direction(self):
+        """更新移动方向和对应的角度"""
+        # 确定当前移动方向
+        if self.moving['right'] and not any([self.moving['up'], self.moving['down']]):
+            self.current_direction = 'right'
+        elif self.moving['right'] and self.moving['up']:
+            self.current_direction = 'right_up'
+        elif self.moving['right'] and self.moving['down']:
+            self.current_direction = 'right_down'
+        elif self.moving['left'] and not any([self.moving['up'], self.moving['down']]):
+            self.current_direction = 'left'
+        elif self.moving['left'] and self.moving['up']:
+            self.current_direction = 'left_up'
+        elif self.moving['left'] and self.moving['down']:
+            self.current_direction = 'left_down'
+        elif self.moving['up'] and not any([self.moving['left'], self.moving['right']]):
+            self.current_direction = 'up'
+        elif self.moving['down'] and not any([self.moving['left'], self.moving['right']]):
+            self.current_direction = 'down'
+            
+        # 更新方向向量
+        self.direction.x = float(self.moving['right']) - float(self.moving['left'])
+        self.direction.y = float(self.moving['down']) - float(self.moving['up'])
+        
+        # 如果有移动输入，更新最后移动方向和角度
+        if self.direction.x != 0 or self.direction.y != 0:
+            self.last_movement_direction.x = self.direction.x
+            self.last_movement_direction.y = self.direction.y
+            self.last_movement_direction.normalize_ip()
+            
+            # 更新朝向
+            self.facing_right = 'right' in self.current_direction
+        
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_w:
@@ -112,10 +152,8 @@ class Player(pygame.sprite.Sprite):
                 self.moving['down'] = True
             elif event.key == pygame.K_a:
                 self.moving['left'] = True
-                self.facing_right = False  # 更新朝向
             elif event.key == pygame.K_d:
                 self.moving['right'] = True
-                self.facing_right = True  # 更新朝向
                 
         elif event.type == pygame.KEYUP:
             if event.key == pygame.K_w:
@@ -127,10 +165,9 @@ class Player(pygame.sprite.Sprite):
             elif event.key == pygame.K_d:
                 self.moving['right'] = False
         
-        # 更新方向向量
-        self.direction.x = float(self.moving['right']) - float(self.moving['left'])
-        self.direction.y = float(self.moving['down']) - float(self.moving['up'])
-                
+        # 更新移动方向
+        self._update_movement_direction()
+        
     def update(self, dt):
         # 更新当前动画
         self.animations[self.current_animation].update(dt)
@@ -263,6 +300,12 @@ class Player(pygame.sprite.Sprite):
             level: 升级后的等级
             effects: 升级效果
         """
+        # 暂时先将金币奖励放在这里
+        # TODO: refactor
+        if passive_type == 'coins':
+            self.coins += effects['coins']
+            return True
+
         if passive_type not in self.passive_levels:
             # 新被动
             if len(self.passives) < 3:  # 检查被动数量上限

@@ -2,6 +2,8 @@ import pygame
 from ..resource_manager import resource_manager
 from enum import Enum, auto
 from .weapon_stats import WeaponStatType, DEFAULT_WEAPON_STATS
+import math
+from ..constants import DIRECTION_ANGLES
 
 class WeaponType(Enum):
     MELEE = auto()      # 近战武器
@@ -42,24 +44,27 @@ class Weapon(pygame.sprite.Sprite):
         Returns:
             bool: 是否应该销毁投射物
         """
-        # 默认实现，子类可以重写
+        # 检查敌人是否处于无敌状态
+        if hasattr(enemy, 'invincible_timer') and enemy.invincible_timer > 0:
+            # 敌人处于无敌状态，不计算新的碰撞
+            return False
+            
+        # 造成伤害
         enemy.take_damage(projectile.damage)
         
         # 检查穿透属性
-        can_penetrate = self.current_stats.get(WeaponStatType.CAN_PENETRATE, False)
-        max_penetration = self.current_stats.get(WeaponStatType.MAX_PENETRATION, 1)
-        
-        # 如果没有 hit_count 属性，添加它
-        if not hasattr(projectile, 'hit_count'):
-            projectile.hit_count = 0
+        if not hasattr(projectile, 'can_penetrate'):
+            return True
+            
+        # 增加命中计数（只有在实际造成伤害时才增加）
         projectile.hit_count += 1
-        
-        # 如果可以穿透且未达到最大穿透次数，继续保持投射物
-        if can_penetrate and projectile.hit_count < max_penetration:
-            # 每次穿透后降低伤害（如果有设置）
-            if WeaponStatType.PENETRATION_DAMAGE_REDUCTION in self.current_stats:
-                projectile.damage *= (1 - self.current_stats[WeaponStatType.PENETRATION_DAMAGE_REDUCTION])
+            
+        # 如果投射物可以穿透且未达到最大穿透次数，继续保持投射物
+        if projectile.can_penetrate and projectile.hit_count < projectile.max_penetration:
+            # 每次穿透后降低伤害
+            projectile.damage *= (1 - projectile.penetration_damage_reduction)
             return False
+            
         return True
         
     def _apply_player_attack_power(self):
@@ -108,18 +113,18 @@ class Weapon(pygame.sprite.Sprite):
         direction_x = self.player.direction.x
         direction_y = self.player.direction.y
         
-        # 如果玩家没有移动，使用朝向
+        # 如果玩家没有移动，使用最后的移动方向和角度
         if direction_x == 0 and direction_y == 0:
-            direction_x = 1 if self.player.facing_right else -1
-            direction_y = 0
-            
+            direction_x = self.player.last_movement_direction.x
+            direction_y = self.player.last_movement_direction.y
+
         # 标准化方向向量
         length = (direction_x**2 + direction_y**2) ** 0.5
         if length > 0:
             direction_x /= length
             direction_y /= length
             
-        return direction_x, direction_y 
+        return direction_x, direction_y
     
     def render(self, screen, camera_x, camera_y):
         """渲染武器"""

@@ -28,8 +28,14 @@ class ThrownKnife(pygame.sprite.Sprite):
         # 投掷属性
         self.direction_x = direction_x
         self.direction_y = direction_y
-        self.damage = stats.get('damage', 20)
-        self.speed = stats.get('projectile_speed', 400)
+        self.damage = stats.get(WeaponStatType.DAMAGE, 20)
+        self.speed = stats.get(WeaponStatType.PROJECTILE_SPEED, 400)
+        
+        # 穿透属性
+        self.can_penetrate = stats.get(WeaponStatType.CAN_PENETRATE, False)
+        self.max_penetration = stats.get(WeaponStatType.MAX_PENETRATION, 1)
+        self.penetration_damage_reduction = stats.get(WeaponStatType.PENETRATION_DAMAGE_REDUCTION, 0.2)
+        self.hit_count = 0  # 初始化命中计数
         
         # 投掷动画相关
         # 目前暂时没有用到，感觉往后也不会就用到。。。
@@ -38,15 +44,12 @@ class ThrownKnife(pygame.sprite.Sprite):
         self.throw_progress = 0
         
         # 存活时间
-        self.lifetime = stats.get('lifetime', 3.0)
-        
-        # 初始化命中计数
-        self.hit_count = 0
+        self.lifetime = stats.get(WeaponStatType.LIFETIME, 3.0)
         
     def update(self, dt):
         # 更新投掷动画进度
         # FIXME: 看起来多此一举，加了缩放反而感觉卡顿。
-        if False: # self.throw_time < self.throw_duration:
+        if self.throw_time < self.throw_duration:
             self.throw_time += dt
             self.throw_progress = min(1.0, self.throw_time / self.throw_duration)
             
@@ -87,7 +90,7 @@ class ThrownKnife(pygame.sprite.Sprite):
         
         # 根据投掷进度缩放图像
         # FIXME: 这里会让小刀变大，感觉很奇怪。 和update中的平滑同时关闭，感觉会好一些。
-        if False: # self.throw_time < self.throw_duration:
+        if self.throw_time < self.throw_duration:
             # 在投掷开始时略微放大，然后恢复正常大小
             scale = 1.0 + 0.5 * (1.0 - self.throw_progress)
             scaled_image = pygame.transform.scale(
