@@ -7,6 +7,7 @@ from src.modules.weapons.fireball import Fireball, FireballProjectile
 from src.modules.enemies.enemy import Enemy
 from src.modules.weapons.frost_nova import FrostNova, FrostNovaProjectile
 from src.modules.enemies.types import Ghost
+from src.modules.weapons.weapon_stats import WeaponStatType
 
 class MockEnemy(Ghost):
     """用于测试的模拟敌人类"""
@@ -54,8 +55,8 @@ class TestWeapons(unittest.TestCase):
         """测试飞刀的创建和基本属性"""
         knife = Knife(self.player)
         self.assertEqual(knife.type, 'knife')
-        self.assertEqual(knife.current_stats['damage'], 20)
-        self.assertEqual(knife.current_stats['attack_speed'], 1.0)
+        self.assertEqual(knife.current_stats[WeaponStatType.DAMAGE], 20)
+        self.assertEqual(knife.current_stats[WeaponStatType.ATTACK_SPEED], 1.0)
         
     def test_knife_throw(self):
         """测试飞刀的投掷功能"""
@@ -75,8 +76,8 @@ class TestWeapons(unittest.TestCase):
         """测试火球的创建和基本属性"""
         fireball = Fireball(self.player)
         self.assertEqual(fireball.type, 'fireball')
-        self.assertEqual(fireball.current_stats['damage'], 30)
-        self.assertEqual(fireball.current_stats['attack_speed'], 0.8)
+        self.assertEqual(fireball.current_stats[WeaponStatType.DAMAGE], 30)
+        self.assertEqual(fireball.current_stats[WeaponStatType.ATTACK_SPEED], 0.8)
         
     def test_fireball_tracking(self):
         """测试火球的追踪功能"""
@@ -131,8 +132,8 @@ class TestWeapons(unittest.TestCase):
         """测试冰霜新星的创建和基本属性"""
         frost_nova = FrostNova(self.player)
         self.assertEqual(frost_nova.type, 'frost_nova')
-        self.assertEqual(frost_nova.current_stats['damage'], 25)
-        self.assertEqual(frost_nova.current_stats['attack_speed'], 0.5)
+        self.assertEqual(frost_nova.current_stats[WeaponStatType.DAMAGE], 25)
+        self.assertEqual(frost_nova.current_stats[WeaponStatType.ATTACK_SPEED], 0.5)
         
     def test_frost_nova_tracking(self):
         """测试冰霜新星的追踪功能"""
@@ -273,9 +274,9 @@ class TestWeapons(unittest.TestCase):
         self.assertIsNotNone(frost_nova)
 
         # 验证每个武器的基础属性
-        self.assertEqual(knife.current_stats['damage'], 20)
-        self.assertEqual(fireball.current_stats['damage'], 30)
-        self.assertEqual(frost_nova.current_stats['damage'], 25)
+        self.assertEqual(knife.current_stats[WeaponStatType.DAMAGE], 20)
+        self.assertEqual(fireball.current_stats[WeaponStatType.DAMAGE], 30)
+        self.assertEqual(frost_nova.current_stats[WeaponStatType.DAMAGE], 25)
 
         # 设置玩家朝向
         self.player.direction.x = 1
@@ -321,9 +322,9 @@ class TestWeapons(unittest.TestCase):
         self.assertEqual(frost_nova.attack_timer, 0)
 
         # 验证武器属性互不影响
-        self.assertEqual(knife.current_stats['damage'], 20)
-        self.assertEqual(fireball.current_stats['damage'], 30)
-        self.assertEqual(frost_nova.current_stats['damage'], 25)
+        self.assertEqual(knife.current_stats[WeaponStatType.DAMAGE], 20)
+        self.assertEqual(fireball.current_stats[WeaponStatType.DAMAGE], 30)
+        self.assertEqual(frost_nova.current_stats[WeaponStatType.DAMAGE], 25)
         
 if __name__ == '__main__':
     unittest.main() 

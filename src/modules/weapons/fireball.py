@@ -2,6 +2,7 @@ import pygame
 import math
 from ..resource_manager import resource_manager
 from .weapon import Weapon
+from .weapon_stats import WeaponStatType, WeaponStatsDict
 
 class FireballProjectile(pygame.sprite.Sprite):
     def __init__(self, x, y, target, stats):
@@ -106,23 +107,22 @@ class FireballProjectile(pygame.sprite.Sprite):
 
 class Fireball(Weapon):
     def __init__(self, player):
-        # 定义基础属性
-        base_stats = {
-            'damage': 30,
-            'attack_speed': 0.8,
-            'projectile_speed': 300,
-            'explosion_radius': 50,
-            'burn_damage': 5,
-            'burn_duration': 3.0,
-            'lifetime': 2.0,
-            'fireballs_per_cast': 1,
-            'spread_angle': 20,
-            'can_penetrate': False,  # 默认不能穿透
-            'max_penetration': 1,    # 最大穿透次数
-            'penetration_damage_reduction': 0.3  # 穿透后伤害降低30%
+        super().__init__(player, 'fireball')
+        self.base_stats: WeaponStatsDict = {
+            WeaponStatType.DAMAGE: 30,
+            WeaponStatType.ATTACK_SPEED: 0.8,
+            WeaponStatType.PROJECTILE_SPEED: 300,
+            WeaponStatType.EXPLOSION_RADIUS: 50,
+            WeaponStatType.BURN_DAMAGE: 5,
+            WeaponStatType.BURN_DURATION: 3.0,
+            WeaponStatType.LIFETIME: 2.0,
+            WeaponStatType.PROJECTILES_PER_CAST: 1,
+            WeaponStatType.SPREAD_ANGLE: 20,
+            WeaponStatType.CAN_PENETRATE: False,
+            WeaponStatType.MAX_PENETRATION: 1,
+            WeaponStatType.PENETRATION_DAMAGE_REDUCTION: 0.3
         }
-        
-        super().__init__(player, 'fireball', base_stats)
+        self.current_stats = self.base_stats.copy()
         
         # 加载武器图像
         self.image = resource_manager.load_image('weapon_fireball', 'images/weapons/fireball_32x32.png')
@@ -131,6 +131,9 @@ class Fireball(Weapon):
         # 投射物列表
         self.projectiles = pygame.sprite.Group()
         
+        # 应用玩家的攻击力加成
+        self._apply_player_attack_power()
+
         # 加载音效
         resource_manager.load_sound('fireball_cast', 'sounds/weapons/fireball_cast.wav')
         resource_manager.load_sound('fireball_explode', 'sounds/weapons/fireball_explode.wav')
@@ -168,11 +171,11 @@ class Fireball(Weapon):
         if not target:
             return
             
-        fireball_count = int(self.current_stats['fireballs_per_cast'])
+        fireball_count = int(self.current_stats[WeaponStatType.PROJECTILES_PER_CAST])
         
         if fireball_count > 1:
             # 计算扇形分布
-            spread_angle = self.current_stats['spread_angle']
+            spread_angle = self.current_stats[WeaponStatType.SPREAD_ANGLE]
             angle_step = spread_angle / (fireball_count - 1)
             base_angle = math.degrees(math.atan2(
                 target.rect.y - self.player.world_y,

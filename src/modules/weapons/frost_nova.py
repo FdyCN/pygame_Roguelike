@@ -2,6 +2,7 @@ import pygame
 import math
 from ..resource_manager import resource_manager
 from .weapon import Weapon
+from .weapon_stats import WeaponStatType, WeaponStatsDict
 
 class FrostNovaProjectile(pygame.sprite.Sprite):
     def __init__(self, x, y, target, stats):
@@ -102,22 +103,21 @@ class FrostNovaProjectile(pygame.sprite.Sprite):
 
 class FrostNova(Weapon):
     def __init__(self, player):
-        # 定义基础属性
-        base_stats = {
-            'damage': 25,
-            'attack_speed': 0.5,
-            'projectile_speed': 250,
-            'slow_amount': 0.5,
-            'slow_duration': 2.0,
-            'lifetime': 2.0,
-            'novas_per_cast': 1,  # 同时释放的新星数量
-            'spread_angle': 20,
-            'can_penetrate': False,  # 默认不能穿透
-            'max_penetration': 1,    # 最大穿透次数
-            'penetration_damage_reduction': 0.4  # 穿透后伤害降低40%
+        super().__init__(player, 'frost_nova')
+        self.base_stats: WeaponStatsDict = {
+            WeaponStatType.DAMAGE: 25,
+            WeaponStatType.ATTACK_SPEED: 0.5,
+            WeaponStatType.PROJECTILE_SPEED: 250,
+            WeaponStatType.SLOW_AMOUNT: 0.5,
+            WeaponStatType.SLOW_DURATION: 2.0,
+            WeaponStatType.LIFETIME: 2.0,
+            WeaponStatType.PROJECTILES_PER_CAST: 1,
+            WeaponStatType.SPREAD_ANGLE: 20,
+            WeaponStatType.CAN_PENETRATE: False,
+            WeaponStatType.MAX_PENETRATION: 1,
+            WeaponStatType.PENETRATION_DAMAGE_REDUCTION: 0.4
         }
-        
-        super().__init__(player, 'frost_nova', base_stats)
+        self.current_stats = self.base_stats.copy()
         
         # 加载武器图像
         self.image = resource_manager.load_image('weapon_frost_nova', 'images/weapons/nova_32x32.png')
@@ -125,6 +125,9 @@ class FrostNova(Weapon):
         
         # 投射物列表
         self.projectiles = pygame.sprite.Group()
+        
+        # 应用玩家的攻击力加成
+        self._apply_player_attack_power()
         
         # 加载音效
         resource_manager.load_sound('frost_nova_cast', 'sounds/weapons/frost_nova_cast.wav')
@@ -162,11 +165,11 @@ class FrostNova(Weapon):
         if not target:
             return
             
-        nova_count = int(self.current_stats['novas_per_cast'])
+        nova_count = int(self.current_stats[WeaponStatType.PROJECTILES_PER_CAST])
         
         if nova_count > 1:
             # 计算扇形分布
-            spread_angle = self.current_stats['spread_angle']
+            spread_angle = self.current_stats[WeaponStatType.SPREAD_ANGLE]
             angle_step = spread_angle / (nova_count - 1)
             base_angle = math.degrees(math.atan2(
                 target.world_y - self.player.world_y,

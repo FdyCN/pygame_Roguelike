@@ -9,6 +9,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from src.modules.player import Player
 from src.modules.upgrade_system import UpgradeManager
 from src.modules.game import Game
+from src.modules.weapons.weapon_stats import WeaponStatType
 
 class TestUpgrades(unittest.TestCase):
     def setUp(self):
@@ -26,13 +27,13 @@ class TestUpgrades(unittest.TestCase):
         
         # 验证初始属性是否与1级飞刀配置一致
         expected_stats = {
-            'damage': 20,
-            'attack_speed': 1.0,
-            'projectile_speed': 400,
-            'can_penetrate': False,
-            'knives_per_throw': 1,
-            'spread_angle': 0,
-            'lifetime': 3.0
+            WeaponStatType.DAMAGE: 20,
+            WeaponStatType.ATTACK_SPEED: 1.0,
+            WeaponStatType.PROJECTILE_SPEED: 400,
+            WeaponStatType.CAN_PENETRATE: False,
+            WeaponStatType.PROJECTILES_PER_CAST: 1,
+            WeaponStatType.SPREAD_ANGLE: 0,
+            WeaponStatType.LIFETIME: 3.0
         }
         
         for stat, value in expected_stats.items():
@@ -51,13 +52,13 @@ class TestUpgrades(unittest.TestCase):
         
         # 验证升级后的属性
         expected_stats = {
-            'damage': 20,
-            'attack_speed': 1.1,
-            'projectile_speed': 400,
-            'can_penetrate': False,
-            'knives_per_throw': 2,
-            'spread_angle': 15,
-            'lifetime': 3.0
+            WeaponStatType.DAMAGE: 20,
+            WeaponStatType.ATTACK_SPEED: 1.1,
+            WeaponStatType.PROJECTILE_SPEED: 400,
+            WeaponStatType.CAN_PENETRATE: False,
+            WeaponStatType.PROJECTILES_PER_CAST: 2,
+            WeaponStatType.SPREAD_ANGLE: 15,
+            WeaponStatType.LIFETIME: 3.0
         }
         
         for stat, value in expected_stats.items():
@@ -76,13 +77,13 @@ class TestUpgrades(unittest.TestCase):
         
         # 验证升级后的属性
         expected_stats = {
-            'damage': 30,
-            'attack_speed': 1.25,
-            'projectile_speed': 400,
-            'can_penetrate': True,
-            'knives_per_throw': 2,
-            'spread_angle': 15,
-            'lifetime': 3.0
+            WeaponStatType.DAMAGE: 30,
+            WeaponStatType.ATTACK_SPEED: 1.25,
+            WeaponStatType.PROJECTILE_SPEED: 400,
+            WeaponStatType.CAN_PENETRATE: True,
+            WeaponStatType.PROJECTILES_PER_CAST: 2,
+            WeaponStatType.SPREAD_ANGLE: 15,
+            WeaponStatType.LIFETIME: 3.0
         }
         
         for stat, value in expected_stats.items():
@@ -490,53 +491,53 @@ class TestUpgrades(unittest.TestCase):
         """测试攻击力加成对武器伤害的影响"""
         # 获取初始武器（飞刀）的基础伤害
         knife = self.player.weapons[0]
-        base_damage = knife.current_stats['damage']
+        base_damage = knife.current_stats[WeaponStatType.DAMAGE]
         
         # 应用攻击力加成
         self.player.apply_passive_upgrade('attack_power', 1, {'attack_power': 0.1})  # 10%攻击力提升
         
         # 验证武器伤害已经提升
-        self.assertEqual(knife.current_stats['damage'], int(base_damage * 1.1))
+        self.assertEqual(knife.current_stats[WeaponStatType.DAMAGE], int(base_damage * 1.1))
         
         # 应用更高级别的攻击力加成
-        base_damage = knife.current_stats['damage']
+        base_damage = knife.current_stats[WeaponStatType.DAMAGE]
         self.player.apply_passive_upgrade('attack_power', 2, {'attack_power': 0.2})  # 20%攻击力提升
         
         # 验证武器伤害已经更新
-        self.assertEqual(knife.current_stats['damage'], int(base_damage * 1.2))
+        self.assertEqual(knife.current_stats[WeaponStatType.DAMAGE], int(base_damage * 1.2))
         
         # 添加新武器并验证攻击力加成是否应用
         self.player.add_weapon('fireball')
         fireball = next(w for w in self.player.weapons if w.type == 'fireball')
-        base_fireball_damage = fireball.base_stats['damage']
+        base_fireball_damage = fireball.base_stats[WeaponStatType.DAMAGE]
         
         # 验证新武器的伤害也受到攻击力加成
-        self.assertEqual(fireball.current_stats['damage'], int(base_fireball_damage * 1.2))
+        self.assertEqual(fireball.current_stats[WeaponStatType.DAMAGE], int(base_fireball_damage * 1.2))
         
     def test_attack_power_on_weapon_upgrade(self):
         """测试武器升级时攻击力加成的正确应用"""
         # 获取初始武器（飞刀）
         knife = self.player.weapons[0]
-        base_damage = knife.base_stats['damage']
+        base_damage = knife.base_stats[WeaponStatType.DAMAGE]
         
         # 先应用攻击力加成
         self.player.apply_passive_upgrade('attack_power', 1, {'attack_power': 0.1})  # 10%攻击力提升
         
         # 应用武器升级
         upgrade_effects = {
-            'damage': 30,
-            'attack_speed': 1.25,
-            'projectile_speed': 400,
-            'penetration': True,
-            'knives_per_throw': 2,
-            'spread_angle': 15,
-            'lifetime': 3.0
+            WeaponStatType.DAMAGE: 30,
+            WeaponStatType.ATTACK_SPEED: 1.25,
+            WeaponStatType.PROJECTILE_SPEED: 400,
+            WeaponStatType.CAN_PENETRATE: True,
+            WeaponStatType.PROJECTILES_PER_CAST: 2,
+            WeaponStatType.SPREAD_ANGLE: 15,
+            WeaponStatType.LIFETIME: 3.0
         }
         self.player.apply_weapon_upgrade('knife', 3, upgrade_effects)
         
         # 验证最终伤害是升级后的基础伤害乘以攻击力加成
-        expected_damage = int(upgrade_effects['damage'] * 1.1)  # 升级后的伤害 * 1.1
-        self.assertEqual(knife.current_stats['damage'], expected_damage)
+        expected_damage = int(upgrade_effects[WeaponStatType.DAMAGE] * 1.1)  # 升级后的伤害 * 1.1
+        self.assertEqual(knife.current_stats[WeaponStatType.DAMAGE], expected_damage)
         
     def tearDown(self):
         """测试后的清理"""

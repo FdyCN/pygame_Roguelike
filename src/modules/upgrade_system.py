@@ -2,6 +2,7 @@ import pygame
 import random
 from enum import Enum
 from .resource_manager import resource_manager
+from .weapons.weapon_stats import WeaponStatType
 
 class UpgradeType(Enum):
     WEAPON = "weapon"
@@ -37,7 +38,7 @@ class PassiveUpgradeLevel:
         self.icon = None
         if icon_path:
             try:
-                self.icon = resource_manager.load_image(f'passive_upgrade_{level}', icon_path)
+                self.icon = resource_manager.load_image(f'passive_upgrade_{name}_{level}', icon_path)
                 self.icon = pygame.transform.scale(self.icon, (48, 48))
             except:
                 print(f"无法加载图标: {icon_path}")
@@ -61,13 +62,13 @@ class UpgradeManager:
                         name="飞刀",
                         level=1,
                         effects={
-                            'damage': 20,
-                            'attack_speed': 1.0,
-                            'projectile_speed': 400,
-                            'can_penetrate': False,
-                            'knives_per_throw': 1,
-                            'spread_angle': 0,
-                            'lifetime': 3.0
+                            WeaponStatType.DAMAGE: 20,
+                            WeaponStatType.ATTACK_SPEED: 1.0,
+                            WeaponStatType.PROJECTILE_SPEED: 400,
+                            WeaponStatType.CAN_PENETRATE: False,
+                            WeaponStatType.PROJECTILES_PER_CAST: 1,
+                            WeaponStatType.SPREAD_ANGLE: 0,
+                            WeaponStatType.LIFETIME: 3.0
                         },
                         description="基础飞刀，单发直线飞行",
                         icon_path="images/weapons/knife_32x32.png"
@@ -76,13 +77,13 @@ class UpgradeManager:
                         name="飞刀",
                         level=2,
                         effects={
-                            'damage': 20,
-                            'attack_speed': 1.1,
-                            'projectile_speed': 400,
-                            'can_penetrate': False,
-                            'knives_per_throw': 2,
-                            'spread_angle': 15,
-                            'lifetime': 3.0
+                            WeaponStatType.DAMAGE: 20,
+                            WeaponStatType.ATTACK_SPEED: 1.1,
+                            WeaponStatType.PROJECTILE_SPEED: 400,
+                            WeaponStatType.CAN_PENETRATE: False,
+                            WeaponStatType.PROJECTILES_PER_CAST: 2,
+                            WeaponStatType.SPREAD_ANGLE: 15,
+                            WeaponStatType.LIFETIME: 3.0
                         },
                         description="同时发射两把飞刀，呈扇形分布",
                         icon_path="images/weapons/knife_32x32.png"
@@ -91,13 +92,13 @@ class UpgradeManager:
                         name="飞刀",
                         level=3,
                         effects={
-                            'damage': 30,
-                            'attack_speed': 1.25,
-                            'projectile_speed': 400,
-                            'can_penetrate': True,
-                            'knives_per_throw': 2,
-                            'spread_angle': 15,
-                            'lifetime': 3.0
+                            WeaponStatType.DAMAGE: 30,
+                            WeaponStatType.ATTACK_SPEED: 1.25,
+                            WeaponStatType.PROJECTILE_SPEED: 400,
+                            WeaponStatType.CAN_PENETRATE: True,
+                            WeaponStatType.PROJECTILES_PER_CAST: 2,
+                            WeaponStatType.SPREAD_ANGLE: 15,
+                            WeaponStatType.LIFETIME: 3.0
                         },
                         description="飞刀可以穿透敌人，伤害提升",
                         icon_path="images/weapons/knife_32x32.png"
@@ -112,11 +113,11 @@ class UpgradeManager:
                         name="火球术",
                         level=1,
                         effects={
-                            'damage': 25,
-                            'radius': 30,
-                            'burn_duration': 3,
-                            'burn_damage': 5,
-                            'cooldown': 1.5
+                            WeaponStatType.DAMAGE: 25,
+                            WeaponStatType.EXPLOSION_RADIUS: 30,
+                            WeaponStatType.BURN_DURATION: 3,
+                            WeaponStatType.BURN_DAMAGE: 5,
+                            WeaponStatType.COOLDOWN: 1.5
                         },
                         description="发射火球，造成范围伤害并点燃敌人",
                         icon_path="images/weapons/fireball_32x32.png"
@@ -125,11 +126,11 @@ class UpgradeManager:
                         name="火球术",
                         level=2,
                         effects={
-                            'damage': 25,
-                            'radius': 40,
-                            'burn_duration': 4,
-                            'burn_damage': 8,
-                            'cooldown': 1.5
+                            WeaponStatType.DAMAGE: 25,
+                            WeaponStatType.EXPLOSION_RADIUS: 40,
+                            WeaponStatType.BURN_DURATION: 4,
+                            WeaponStatType.BURN_DAMAGE: 8,
+                            WeaponStatType.COOLDOWN: 1.5
                         },
                         description="增加爆炸范围和燃烧伤害",
                         icon_path="images/weapons/fireball_32x32.png"
@@ -138,11 +139,11 @@ class UpgradeManager:
                         name="火球术",
                         level=3,
                         effects={
-                            'damage': 35,
-                            'radius': 40,
-                            'burn_duration': 5,
-                            'burn_damage': 10,
-                            'cooldown': 1.2
+                            WeaponStatType.DAMAGE: 35,
+                            WeaponStatType.EXPLOSION_RADIUS: 40,
+                            WeaponStatType.BURN_DURATION: 5,
+                            WeaponStatType.BURN_DAMAGE: 10,
+                            WeaponStatType.COOLDOWN: 1.2
                         },
                         description="提升伤害和燃烧效果，减少冷却时间",
                         icon_path="images/weapons/fireball_32x32.png"
@@ -157,11 +158,11 @@ class UpgradeManager:
                         name="冰锥术",
                         level=1,
                         effects={
-                            'damage': 25,
-                            'radius': 30,
-                            'freeze_duration': 3,
-                            'slow_percent': 50,
-                            'cooldown': 1.5
+                            WeaponStatType.DAMAGE: 25,
+                            WeaponStatType.EXPLOSION_RADIUS: 30,
+                            WeaponStatType.FREEZE_DURATION: 3,
+                            WeaponStatType.SLOW_PERCENT: 50,
+                            WeaponStatType.COOLDOWN: 1.5
                         },
                         description="发射冰锥，造成单体伤害并减速敌人",
                         icon_path="images/weapons/nova_32x32.png"
@@ -170,11 +171,11 @@ class UpgradeManager:
                         name="冰锥术",
                         level=2,
                         effects={
-                            'damage': 25,
-                            'radius': 40,
-                            'freeze_duration': 4,
-                            'slow_percent': 50,
-                            'cooldown': 1.5
+                            WeaponStatType.DAMAGE: 25,
+                            WeaponStatType.EXPLOSION_RADIUS: 40,
+                            WeaponStatType.FREEZE_DURATION: 4,
+                            WeaponStatType.SLOW_PERCENT: 50,
+                            WeaponStatType.COOLDOWN: 1.5
                         },
                         description="造成爆炸范围和减速",
                         icon_path="images/weapons/nova_32x32.png"
@@ -183,11 +184,11 @@ class UpgradeManager:
                         name="冰锥术",
                         level=3,
                         effects={
-                            'damage': 35,
-                            'radius': 40,
-                            'freeze_duration': 5,
-                            'slow_percent': 50,
-                            'cooldown': 1.2
+                            WeaponStatType.DAMAGE: 35,
+                            WeaponStatType.EXPLOSION_RADIUS: 40,
+                            WeaponStatType.FREEZE_DURATION: 5,
+                            WeaponStatType.SLOW_PERCENT: 50,
+                            WeaponStatType.COOLDOWN: 1.2
                         },
                         description="提升伤害和减速效果，减少冷却时间",
                         icon_path="images/weapons/nova_32x32.png"
@@ -369,21 +370,21 @@ class UpgradeManager:
                         level=1,
                         effects={'pickup_range': 25},
                         description="拾取范围增加25",
-                        icon_path="images/passives/pickup_range_up_32x32.png"
+                        icon_path="images/passives/absorb_up_32x32.png"
                     ),
                     PassiveUpgradeLevel(
                         name="拾取范围",
                         level=2,
                         effects={'pickup_range': 50},
                         description="拾取范围增加50",
-                        icon_path="images/passives/pickup_range_up_32x32.png"
+                        icon_path="images/passives/absorb_up_32x32.png"
                     ),
                     PassiveUpgradeLevel(
                         name="拾取范围",
                         level=3,
                         effects={'pickup_range': 100},
                         description="拾取范围增加100",
-                        icon_path="images/passives/pickup_range_up_32x32.png"
+                        icon_path="images/passives/absorb_up_32x32.png"
                     )
                 ]
             )    

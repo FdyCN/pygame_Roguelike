@@ -1,33 +1,32 @@
 import pygame
 from ..resource_manager import resource_manager
 from enum import Enum, auto
+from .weapon_stats import WeaponStatType, DEFAULT_WEAPON_STATS
 
 class WeaponType(Enum):
     MELEE = auto()      # 近战武器
     PROJECTILE = auto() # 投射物武器
     
 class Weapon(pygame.sprite.Sprite):
-    def __init__(self, player, weapon_type, base_stats):
+    def __init__(self, player, weapon_type):
         super().__init__()
         self.player = player
         self.type = weapon_type
-        
-        # 基础属性
-        self.base_stats = base_stats.copy()
-        self.current_stats = base_stats.copy()
+
+        self.base_stats = DEFAULT_WEAPON_STATS.copy()
+        self.current_stats = self.base_stats.copy()
         
         # 等级
         self.level = 1
         
         # 攻击状态
         self.attack_timer = 0
-        self.attack_interval = 1.0 / self.current_stats.get('attack_speed', 1.0)
+        self.attack_interval = 1.0 / self.current_stats.get(WeaponStatType.ATTACK_SPEED, 1.0)
         
         # 投射物列表（如果是投射物类型的武器）
         self.projectiles = pygame.sprite.Group()
         
-        # 应用玩家的攻击力加成
-        self._apply_player_attack_power()
+
         
     def get_projectiles(self):
         """获取武器的投射物列表，如果没有则返回空列表"""
@@ -47,8 +46,8 @@ class Weapon(pygame.sprite.Sprite):
         enemy.take_damage(projectile.damage)
         
         # 检查穿透属性
-        can_penetrate = self.current_stats.get('can_penetrate', False)
-        max_penetration = self.current_stats.get('max_penetration', 1)
+        can_penetrate = self.current_stats.get(WeaponStatType.CAN_PENETRATE, False)
+        max_penetration = self.current_stats.get(WeaponStatType.MAX_PENETRATION, 1)
         
         # 如果没有 hit_count 属性，添加它
         if not hasattr(projectile, 'hit_count'):
@@ -58,22 +57,22 @@ class Weapon(pygame.sprite.Sprite):
         # 如果可以穿透且未达到最大穿透次数，继续保持投射物
         if can_penetrate and projectile.hit_count < max_penetration:
             # 每次穿透后降低伤害（如果有设置）
-            if 'penetration_damage_reduction' in self.current_stats:
-                projectile.damage *= (1 - self.current_stats['penetration_damage_reduction'])
+            if WeaponStatType.PENETRATION_DAMAGE_REDUCTION in self.current_stats:
+                projectile.damage *= (1 - self.current_stats[WeaponStatType.PENETRATION_DAMAGE_REDUCTION])
             return False
         return True
         
     def _apply_player_attack_power(self):
         """应用玩家的攻击力加成到武器伤害"""
-        if 'damage' in self.current_stats:
+        if WeaponStatType.DAMAGE in self.current_stats:
             # 使用当前伤害值乘以玩家攻击力加成
-            current_damage = self.current_stats['damage']
-            self.current_stats['damage'] = int(current_damage * self.player.attack_power)
+            current_damage = self.current_stats[WeaponStatType.DAMAGE]
+            self.current_stats[WeaponStatType.DAMAGE] = int(current_damage * self.player.attack_power)
         
     def apply_effects(self, effects):
         """应用升级效果"""
         # 保存旧的攻击间隔用于比较
-        old_attack_speed = self.current_stats.get('attack_speed', 1.0)
+        old_attack_speed = self.current_stats.get(WeaponStatType.ATTACK_SPEED, 1.0)
         
         # 应用所有效果
         for stat, value in effects.items():
@@ -89,7 +88,7 @@ class Weapon(pygame.sprite.Sprite):
                     self.current_stats[stat] = value
                     
         # 如果攻击速度改变，更新攻击间隔
-        new_attack_speed = self.current_stats.get('attack_speed', 1.0)
+        new_attack_speed = self.current_stats.get(WeaponStatType.ATTACK_SPEED, 1.0)
         if new_attack_speed != old_attack_speed:
             self.attack_interval = 1.0 / new_attack_speed
             

@@ -2,6 +2,7 @@ import pygame
 import math
 from ..resource_manager import resource_manager
 from .weapon import Weapon
+from .weapon_stats import WeaponStatType, WeaponStatsDict
 
 class ThrownKnife(pygame.sprite.Sprite):
     def __init__(self, x, y, direction_x, direction_y, stats):
@@ -31,6 +32,7 @@ class ThrownKnife(pygame.sprite.Sprite):
         self.speed = stats.get('projectile_speed', 400)
         
         # 投掷动画相关
+        # 目前暂时没有用到，感觉往后也不会就用到。。。
         self.throw_time = 0
         self.throw_duration = 0.15
         self.throw_progress = 0
@@ -43,7 +45,8 @@ class ThrownKnife(pygame.sprite.Sprite):
         
     def update(self, dt):
         # 更新投掷动画进度
-        if self.throw_time < self.throw_duration:
+        # FIXME: 看起来多此一举，加了缩放反而感觉卡顿。
+        if False: # self.throw_time < self.throw_duration:
             self.throw_time += dt
             self.throw_progress = min(1.0, self.throw_time / self.throw_duration)
             
@@ -83,7 +86,8 @@ class ThrownKnife(pygame.sprite.Sprite):
         screen_y = self.world_y - camera_y + screen.get_height() // 2
         
         # 根据投掷进度缩放图像
-        if self.throw_time < self.throw_duration:
+        # FIXME: 这里会让小刀变大，感觉很奇怪。 和update中的平滑同时关闭，感觉会好一些。
+        if False: # self.throw_time < self.throw_duration:
             # 在投掷开始时略微放大，然后恢复正常大小
             scale = 1.0 + 0.5 * (1.0 - self.throw_progress)
             scaled_image = pygame.transform.scale(
@@ -101,25 +105,27 @@ class ThrownKnife(pygame.sprite.Sprite):
 
 class Knife(Weapon):
     def __init__(self, player):
-        # 定义基础属性
-        base_stats = {
-            'damage': 20,
-            'attack_speed': 1.0,
-            'projectile_speed': 400,
-            'can_penetrate': False,  # 默认不能穿透
-            'max_penetration': 100,    # 最大穿透次数
-            'penetration_damage_reduction': 0.2,  # 穿透后伤害降低20%
-            'knives_per_throw': 1,
-            'spread_angle': 0,
-            'lifetime': 3.0
+        super().__init__(player, 'knife')
+        self.base_stats: WeaponStatsDict = {
+            WeaponStatType.DAMAGE: 20,
+            WeaponStatType.ATTACK_SPEED: 1.0,
+            WeaponStatType.PROJECTILE_SPEED: 400,
+            WeaponStatType.CAN_PENETRATE: False,
+            WeaponStatType.MAX_PENETRATION: 1,
+            WeaponStatType.PENETRATION_DAMAGE_REDUCTION: 0.2,
+            WeaponStatType.PROJECTILES_PER_CAST: 1,
+            WeaponStatType.SPREAD_ANGLE: 0,
+            WeaponStatType.LIFETIME: 3.0
         }
-        
-        super().__init__(player, 'knife', base_stats)
+        self.current_stats = self.base_stats.copy()
         
         # 加载武器图像
         self.image = resource_manager.load_image('weapon_knife', 'images/weapons/knife_32x32.png')
         self.rect = self.image.get_rect()
         
+        # 应用玩家的攻击力加成
+        self._apply_player_attack_power()
+
         # 加载攻击音效
         resource_manager.load_sound('knife_throw', 'sounds/weapons/knife_throw.wav')
         
@@ -137,11 +143,11 @@ class Knife(Weapon):
     def throw_knives(self):
         """投掷小刀"""
         direction_x, direction_y = self.get_player_direction()
-        knives_count = int(self.current_stats['knives_per_throw'])
+        knives_count = int(self.current_stats[WeaponStatType.PROJECTILES_PER_CAST])
         
         if knives_count > 1:
             # 计算扇形分布
-            spread_angle = self.current_stats['spread_angle']
+            spread_angle = self.current_stats[WeaponStatType.SPREAD_ANGLE]
             angle_step = spread_angle / (knives_count - 1)
             base_angle = math.degrees(math.atan2(direction_y, direction_x))
             start_angle = base_angle - spread_angle / 2
