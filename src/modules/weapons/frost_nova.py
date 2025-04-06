@@ -23,19 +23,19 @@ class FrostNovaProjectile(pygame.sprite.Sprite):
         self.target = target
         
         # 投射物属性
-        self.damage = stats.get('damage', 25)
-        self.speed = float(stats.get('projectile_speed', 250))  # 确保速度是浮点数
+        self.damage = stats.get(WeaponStatType.DAMAGE, 25)
+        self.speed = float(stats.get(WeaponStatType.PROJECTILE_SPEED, 250))  # 确保速度是浮点数
         
         # 初始化方向
         self.direction_x = 0.0
         self.direction_y = 0.0
         
         # 冰霜特有属性
-        self.slow_amount = stats.get('slow_amount', 0.5)
-        self.slow_duration = stats.get('slow_duration', 2.0)
+        self.slow_amount = stats.get(WeaponStatType.SLOW_PERCENT, 50) / 100  # 转换为百分比
+        self.slow_duration = stats.get(WeaponStatType.FREEZE_DURATION, 2.0)
         
         # 存活时间
-        self.lifetime = stats.get('lifetime', 2.0)
+        self.lifetime = stats.get(WeaponStatType.LIFETIME, 2.0)
         
         # 动画效果
         self.scale = 1.0
@@ -149,30 +149,6 @@ class FrostNovaProjectile(pygame.sprite.Sprite):
 class FrostNova(Weapon):
     def __init__(self, player):
         super().__init__(player, 'frost_nova')
-        self.base_stats: WeaponStatsDict = {
-            WeaponStatType.DAMAGE: 25,
-            WeaponStatType.ATTACK_SPEED: 0.5,
-            WeaponStatType.PROJECTILE_SPEED: 250,
-            WeaponStatType.SLOW_AMOUNT: 0.5,
-            WeaponStatType.SLOW_DURATION: 2.0,
-            WeaponStatType.LIFETIME: 2.0,
-            WeaponStatType.PROJECTILES_PER_CAST: 1,
-            WeaponStatType.SPREAD_ANGLE: 20,
-            WeaponStatType.CAN_PENETRATE: False,
-            WeaponStatType.MAX_PENETRATION: 1,
-            WeaponStatType.PENETRATION_DAMAGE_REDUCTION: 0.4
-        }
-        self.current_stats = self.base_stats.copy()
-        
-        # 加载武器图像
-        self.image = resource_manager.load_image('weapon_frost_nova', 'images/weapons/nova_32x32.png')
-        self.rect = self.image.get_rect()
-        
-        # 投射物列表
-        self.projectiles = pygame.sprite.Group()
-        
-        # 应用玩家的攻击力加成
-        self._apply_player_attack_power()
         
         # 加载音效
         resource_manager.load_sound('frost_nova_cast', 'sounds/weapons/frost_nova_cast.wav')
@@ -210,11 +186,11 @@ class FrostNova(Weapon):
         if not target:
             return
             
-        nova_count = int(self.current_stats[WeaponStatType.PROJECTILES_PER_CAST])
+        nova_count = int(self.current_stats.get(WeaponStatType.PROJECTILES_PER_CAST, 1))
         
         if nova_count > 1:
             # 计算扇形分布
-            spread_angle = self.current_stats[WeaponStatType.SPREAD_ANGLE]
+            spread_angle = self.current_stats.get(WeaponStatType.SPREAD_ANGLE, 20)
             angle_step = spread_angle / (nova_count - 1)
             base_angle = math.degrees(math.atan2(
                 target.world_y - self.player.world_y,
@@ -240,6 +216,7 @@ class FrostNova(Weapon):
             self.current_stats
         )
         self.projectiles.add(nova)
+        return nova  # 返回创建的投射物
         
     def render(self, screen, camera_x, camera_y):
         # 渲染所有冰霜新星

@@ -3,6 +3,7 @@ import math
 from ..resource_manager import resource_manager
 from .weapon import Weapon
 from .weapon_stats import WeaponStatType, WeaponStatsDict
+from .weapons_data import get_weapon_base_stats
 
 class ThrownKnife(pygame.sprite.Sprite):
     """飞刀投射物类"""
@@ -98,25 +99,10 @@ class ThrownKnife(pygame.sprite.Sprite):
 class Knife(Weapon):
     def __init__(self, player):
         super().__init__(player, 'knife')
-        self.base_stats: WeaponStatsDict = {
-            WeaponStatType.DAMAGE: 20,
-            WeaponStatType.ATTACK_SPEED: 1.0,
-            WeaponStatType.PROJECTILE_SPEED: 400,
-            WeaponStatType.CAN_PENETRATE: False,
-            WeaponStatType.MAX_PENETRATION: 1,
-            WeaponStatType.PENETRATION_DAMAGE_REDUCTION: 0.2,
-            WeaponStatType.PROJECTILES_PER_CAST: 1,
-            WeaponStatType.SPREAD_ANGLE: 0,
-            WeaponStatType.LIFETIME: 3.0
-        }
-        self.current_stats = self.base_stats.copy()
         
         # 加载武器图像
         self.image = resource_manager.load_image('weapon_knife', 'images/weapons/knife_32x32.png')
         self.rect = self.image.get_rect()
-        
-        # 应用玩家的攻击力加成
-        self._apply_player_attack_power()
 
         # 加载攻击音效
         resource_manager.load_sound('knife_throw', 'sounds/weapons/knife_throw.wav')

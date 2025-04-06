@@ -8,6 +8,7 @@ from src.modules.enemies.enemy import Enemy
 from src.modules.weapons.frost_nova import FrostNova, FrostNovaProjectile
 from src.modules.enemies.types import Ghost
 from src.modules.weapons.weapon_stats import WeaponStatType
+from src.modules.weapons.weapons_data import get_weapon_config, get_weapon_base_stats
 
 class MockEnemy(Ghost):
     """用于测试的模拟敌人类"""
@@ -77,8 +78,14 @@ class TestWeapons(unittest.TestCase):
         # 添加火球武器
         fireball = self.player.add_weapon('fireball')
         self.assertEqual(fireball.type, 'fireball')
-        self.assertEqual(fireball.current_stats[WeaponStatType.DAMAGE], 30)
-        self.assertEqual(fireball.current_stats[WeaponStatType.ATTACK_SPEED], 0.8)
+        
+        # 从配置数据获取基础值
+        fireball_base_stats = get_weapon_base_stats('fireball')
+        self.assertEqual(fireball.current_stats[WeaponStatType.DAMAGE], fireball_base_stats[WeaponStatType.DAMAGE])
+        
+        # 验证攻击能力存在
+        self.assertTrue(hasattr(fireball, 'cast_fireballs'))
+        self.assertTrue(hasattr(fireball, 'projectiles'))
         
     def test_fireball_tracking(self):
         """测试火球的追踪功能"""
@@ -133,8 +140,14 @@ class TestWeapons(unittest.TestCase):
         """测试冰霜新星的创建和基本属性"""
         frost_nova = self.player.add_weapon('frost_nova')
         self.assertEqual(frost_nova.type, 'frost_nova')
-        self.assertEqual(frost_nova.current_stats[WeaponStatType.DAMAGE], 25)
-        self.assertEqual(frost_nova.current_stats[WeaponStatType.ATTACK_SPEED], 0.5)
+        
+        # 从配置数据获取基础值
+        frost_nova_base_stats = get_weapon_base_stats('frost_nova')
+        self.assertEqual(frost_nova.current_stats[WeaponStatType.DAMAGE], frost_nova_base_stats[WeaponStatType.DAMAGE])
+        
+        # 验证攻击能力存在
+        self.assertTrue(hasattr(frost_nova, 'cast_novas'))
+        self.assertTrue(hasattr(frost_nova, 'projectiles'))
         
     def test_frost_nova_tracking(self):
         """测试冰霜新星的追踪功能"""

@@ -335,6 +335,7 @@ class ResourceManager:
         self.load_sound("hit", "sounds/hit.wav")
         self.load_sound("enemy_death", "sounds/enemy_death.wav")
         self.load_sound("player_hurt", "sounds/player_hurt.wav")
+        self.load_sound("player_death", "sounds/player_hurt.wav")  # 使用player_hurt音效作为临时替代
         self.load_sound("level_up", "sounds/level_up.wav")
         self.load_sound("collect_exp", "sounds/collect_exp.wav")
         self.load_sound("collect_coin", "sounds/collect_coin.wav")

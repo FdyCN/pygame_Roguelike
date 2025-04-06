@@ -3,6 +3,7 @@ from ..resource_manager import resource_manager
 from enum import Enum, auto
 from .weapon_stats import WeaponStatType, DEFAULT_WEAPON_STATS
 import math
+from .weapons_data import get_weapon_base_stats, get_weapon_config
 
 class WeaponType(Enum):
     MELEE = auto()      # 近战武器
@@ -14,7 +15,13 @@ class Weapon(pygame.sprite.Sprite):
         self.player = player
         self.type = weapon_type
 
-        self.base_stats = DEFAULT_WEAPON_STATS.copy()
+        # 加载武器配置数据
+        weapon_stats = get_weapon_base_stats(weapon_type)
+        if weapon_stats:
+            self.base_stats = weapon_stats.copy()
+        else:
+            self.base_stats = DEFAULT_WEAPON_STATS.copy()
+            
         self.current_stats = self.base_stats.copy()
         
         # 等级
@@ -27,7 +34,12 @@ class Weapon(pygame.sprite.Sprite):
         # 投射物列表（如果是投射物类型的武器）
         self.projectiles = pygame.sprite.Group()
         
-
+        # 加载配置中的图标路径
+        weapon_config = get_weapon_config(weapon_type)
+        if weapon_config and 'icon_path' in weapon_config:
+            self.icon_path = weapon_config['icon_path']
+        else:
+            self.icon_path = None
         
     def get_projectiles(self):
         """获取武器的投射物列表，如果没有则返回空列表"""
@@ -82,16 +94,15 @@ class Weapon(pygame.sprite.Sprite):
         
         # 应用所有效果
         for stat, value in effects.items():
-            if stat in self.current_stats:
-                if isinstance(value, dict):
-                    # 处理复杂效果，如 {'multiply': 1.2} 或 {'add': 10}
-                    if 'multiply' in value:
-                        self.current_stats[stat] *= value['multiply']
-                    elif 'add' in value:
-                        self.current_stats[stat] += value['add']
-                else:
-                    # 直接设置值
-                    self.current_stats[stat] = value
+            if stat in self.current_stats and isinstance(value, dict):
+                # 处理复杂效果，如 {'multiply': 1.2} 或 {'add': 10}
+                if 'multiply' in value:
+                    self.current_stats[stat] *= value['multiply']
+                elif 'add' in value:
+                    self.current_stats[stat] += value['add']
+            else:
+                # 直接设置值，可能存在base state里面没有，但是后续升级会增加的属性，如：穿透、爆炸等。
+                self.current_stats[stat] = value
                     
         # 如果攻击速度改变，更新攻击间隔
         new_attack_speed = self.current_stats.get(WeaponStatType.ATTACK_SPEED, 1.0)

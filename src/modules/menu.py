@@ -169,9 +169,23 @@ class PauseMenu(Menu):
 class GameOverMenu(Menu):
     def __init__(self, screen):
         super().__init__(screen)
-        self.options = ["重新开始", "退出游戏"]
+        self.options = ["重新开始", "返回主菜单", "退出游戏"]
         self.selected_index = 0
         self.option_rects = []
+        
+    def update(self, mouse_pos):
+        """更新菜单状态
+        
+        Args:
+            mouse_pos: 鼠标位置
+        """
+        # 更新鼠标悬停状态
+        for i, rect in enumerate(self.option_rects):
+            if rect.collidepoint(mouse_pos):
+                if self.selected_index != i:
+                    self.selected_index = i
+                    resource_manager.play_sound("menu_move")
+                break
         
     def handle_event(self, event):
         if not self.is_active:
@@ -181,9 +195,12 @@ class GameOverMenu(Menu):
         if event.type == pygame.KEYDOWN:
             if event.key in [pygame.K_UP, pygame.K_w]:
                 self.selected_index = (self.selected_index - 1) % len(self.options)
+                resource_manager.play_sound("menu_move")
             elif event.key in [pygame.K_DOWN, pygame.K_s]:
                 self.selected_index = (self.selected_index + 1) % len(self.options)
+                resource_manager.play_sound("menu_move")
             elif event.key in [pygame.K_RETURN, pygame.K_SPACE]:
+                resource_manager.play_sound("menu_select")
                 return self._handle_selection(self.selected_index)
                 
         # 鼠标控制
@@ -191,23 +208,18 @@ class GameOverMenu(Menu):
             mouse_pos = pygame.mouse.get_pos()
             for i, rect in enumerate(self.option_rects):
                 if rect.collidepoint(mouse_pos):
+                    resource_manager.play_sound("menu_select")
                     return self._handle_selection(i)
-                    
-        # 更新鼠标悬停状态
-        elif event.type == pygame.MOUSEMOTION:
-            mouse_pos = pygame.mouse.get_pos()
-            for i, rect in enumerate(self.option_rects):
-                if rect.collidepoint(mouse_pos):
-                    self.selected_index = i
-                    break
                     
         return None
         
     def _handle_selection(self, index):
         """处理选项选择"""
-        if index == 0:
+        if index == 0:  # 重新开始
             return "restart"
-        elif index == 1:
+        elif index == 1:  # 返回主菜单
+            return "main_menu"
+        elif index == 2:  # 退出游戏
             return "exit"
         return None
         

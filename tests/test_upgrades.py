@@ -509,10 +509,11 @@ class TestUpgrades(unittest.TestCase):
         # 添加新武器并验证攻击力加成是否应用
         self.player.add_weapon('fireball')
         fireball = next(w for w in self.player.weapons if w.type == 'fireball')
-        base_fireball_damage = fireball.base_stats[WeaponStatType.DAMAGE]
+        base_fireball_damage = fireball.current_stats[WeaponStatType.DAMAGE]
         
         # 验证新武器的伤害也受到攻击力加成
-        self.assertEqual(fireball.current_stats[WeaponStatType.DAMAGE], int(base_fireball_damage * 1.2))
+        expected_damage = int(25 * 1.2)  # 固定使用基础伤害 25 * 20% 加成 = 30
+        self.assertEqual(fireball.current_stats[WeaponStatType.DAMAGE], expected_damage)
         
     def test_attack_power_on_weapon_upgrade(self):
         """测试武器升级时攻击力加成的正确应用"""

@@ -5,6 +5,7 @@
 
 from .base_component import Component
 import inspect
+from ..weapons.weapon_utils import create_weapon
 
 class WeaponManager(Component):
     """武器管理组件，处理实体的武器系统"""
@@ -43,11 +44,22 @@ class WeaponManager(Component):
                 if weapon.type == weapon_type:
                     return None
             
-            # 创建新武器
-            weapon = self.available_weapons[weapon_type](self.owner)
-            self.weapons.append(weapon)
-            self.weapon_levels[weapon_type] = 1
-            return weapon
+            # 尝试使用工厂方法创建武器
+            weapon = create_weapon(weapon_type, self.owner)
+            
+            # 如果工厂创建失败，使用旧方法兼容
+            if weapon is None and weapon_type in self.available_weapons:
+                weapon = self.available_weapons[weapon_type](self.owner)
+                
+            if weapon:
+                self.weapons.append(weapon)
+                self.weapon_levels[weapon_type] = 1
+                
+                # 应用玩家的攻击力加成
+                if hasattr(self.owner, 'attack_power') and self.owner.attack_power != 1.0:
+                    weapon._apply_player_attack_power(self.owner.attack_power)
+                    
+                return weapon
         return None
     
     def remove_weapon(self, weapon_type):

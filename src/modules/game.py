@@ -264,9 +264,12 @@ class Game:
             action = self.game_over_menu.handle_event(event)
             if action == "restart":
                 self.start_new_game()
-            elif action == "exit":
+            elif action == "main_menu":
                 self.in_main_menu = True
                 self.game_over = False
+                resource_manager.stop_music()  # 停止游戏音乐
+            elif action == "exit":
+                self.running = False  # 退出游戏
             return
             
             
@@ -349,14 +352,24 @@ class Game:
         
     def update(self, dt):
         """更新游戏状态"""
-        if self.in_main_menu or self.game_over or self.paused:
+        # 保持游戏状态的更新
+        if self.in_main_menu:
             return
             
-        # 如果游戏结束或暂停或正在选择升级，只更新菜单
+        # 检查玩家是否死亡
+        if self.player and self.player.health <= 0 and not self.game_over:
+            self.game_over = True
+            self.game_over_menu.show()
+            # 播放游戏结束音效
+            resource_manager.play_sound("player_death")
+            return
+            
+        # 如果游戏结束，更新游戏结束菜单
         if self.game_over:
             self.game_over_menu.update(pygame.mouse.get_pos())
             return
             
+        # 如果暂停或者正在选择升级，不更新游戏状态
         if self.paused or self.upgrade_menu.is_active or self.save_menu.is_active:
             return
             
@@ -365,12 +378,6 @@ class Game:
         # 更新玩家位置（在世界坐标系中）
         self.player.update(dt)
         
-        # 检查玩家是否死亡
-        if self.player.health <= 0 and not self.game_over:
-            self.game_over = True
-            self.game_over_menu.show()
-            return
-            
         # 更新相机位置（跟随玩家）
         self.camera_x = self.player.world_x
         self.camera_y = self.player.world_y

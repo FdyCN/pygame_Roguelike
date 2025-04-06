@@ -31,7 +31,7 @@ DEFAULT_HERO_CONFIG = {
         }
     },
     "base_stats": {
-        "max_health": 100,
+        "max_health": 1,
         "speed": 200,
         "defense": 0,
         "health_regen": 0,

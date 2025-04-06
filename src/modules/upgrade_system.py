@@ -3,6 +3,7 @@ import random
 from enum import Enum
 from .resource_manager import resource_manager
 from .weapons.weapon_stats import WeaponStatType
+from .weapons.weapons_data import WEAPONS_CONFIG, get_weapon_config
 
 class UpgradeType(Enum):
     WEAPON = "weapon"
@@ -52,152 +53,9 @@ class PassiveUpgrade:
 
 class UpgradeManager:
     def __init__(self):
-        # 武器升级配置
-        self.weapon_upgrades = {
-            'knife': WeaponUpgrade(
-                name="飞刀",
-                max_level=3,
-                levels=[
-                    WeaponUpgradeLevel(
-                        name="飞刀",
-                        level=1,
-                        effects={
-                            WeaponStatType.DAMAGE: 20,
-                            WeaponStatType.ATTACK_SPEED: 1.0,
-                            WeaponStatType.PROJECTILE_SPEED: 400,
-                            WeaponStatType.CAN_PENETRATE: False,
-                            WeaponStatType.PROJECTILES_PER_CAST: 1,
-                            WeaponStatType.SPREAD_ANGLE: 0,
-                            WeaponStatType.LIFETIME: 3.0
-                        },
-                        description="基础飞刀，单发直线飞行",
-                        icon_path="images/weapons/knife_32x32.png"
-                    ),
-                    WeaponUpgradeLevel(
-                        name="飞刀",
-                        level=2,
-                        effects={
-                            WeaponStatType.DAMAGE: 20,
-                            WeaponStatType.ATTACK_SPEED: 1.1,
-                            WeaponStatType.PROJECTILE_SPEED: 400,
-                            WeaponStatType.CAN_PENETRATE: False,
-                            WeaponStatType.PROJECTILES_PER_CAST: 2,
-                            WeaponStatType.SPREAD_ANGLE: 15,
-                            WeaponStatType.LIFETIME: 3.0
-                        },
-                        description="同时发射两把飞刀，呈扇形分布",
-                        icon_path="images/weapons/knife_32x32.png"
-                    ),
-                    WeaponUpgradeLevel(
-                        name="飞刀",
-                        level=3,
-                        effects={
-                            WeaponStatType.DAMAGE: 30,
-                            WeaponStatType.ATTACK_SPEED: 1.25,
-                            WeaponStatType.PROJECTILE_SPEED: 400,
-                            WeaponStatType.CAN_PENETRATE: True,
-                            WeaponStatType.PROJECTILES_PER_CAST: 2,
-                            WeaponStatType.SPREAD_ANGLE: 15,
-                            WeaponStatType.LIFETIME: 3.0,
-                            WeaponStatType.MAX_PENETRATION: 10,
-                            WeaponStatType.PENETRATION_DAMAGE_REDUCTION: 0.2
-                        },
-                        description="飞刀可以穿透敌人，伤害提升",
-                        icon_path="images/weapons/knife_32x32.png"
-                    )
-                ]
-            ),
-            'fireball': WeaponUpgrade(
-                name="火球术",
-                max_level=3,
-                levels=[
-                    WeaponUpgradeLevel(
-                        name="火球术",
-                        level=1,
-                        effects={
-                            WeaponStatType.DAMAGE: 25,
-                            WeaponStatType.EXPLOSION_RADIUS: 30,
-                            WeaponStatType.BURN_DURATION: 3,
-                            WeaponStatType.BURN_DAMAGE: 5,
-                            WeaponStatType.COOLDOWN: 1.5
-                        },
-                        description="发射火球，造成范围伤害并点燃敌人",
-                        icon_path="images/weapons/fireball_32x32.png"
-                    ),
-                    WeaponUpgradeLevel(
-                        name="火球术",
-                        level=2,
-                        effects={
-                            WeaponStatType.DAMAGE: 25,
-                            WeaponStatType.EXPLOSION_RADIUS: 40,
-                            WeaponStatType.BURN_DURATION: 4,
-                            WeaponStatType.BURN_DAMAGE: 8,
-                            WeaponStatType.COOLDOWN: 1.5
-                        },
-                        description="增加爆炸范围和燃烧伤害",
-                        icon_path="images/weapons/fireball_32x32.png"
-                    ),
-                    WeaponUpgradeLevel(
-                        name="火球术",
-                        level=3,
-                        effects={
-                            WeaponStatType.DAMAGE: 35,
-                            WeaponStatType.EXPLOSION_RADIUS: 40,
-                            WeaponStatType.BURN_DURATION: 5,
-                            WeaponStatType.BURN_DAMAGE: 10,
-                            WeaponStatType.COOLDOWN: 1.2
-                        },
-                        description="提升伤害和燃烧效果，减少冷却时间",
-                        icon_path="images/weapons/fireball_32x32.png"
-                    )
-                ]
-            ),
-            'frost_nova': WeaponUpgrade(
-                name="冰锥术",
-                max_level=3,
-                levels=[
-                    WeaponUpgradeLevel(
-                        name="冰锥术",
-                        level=1,
-                        effects={
-                            WeaponStatType.DAMAGE: 25,
-                            WeaponStatType.EXPLOSION_RADIUS: 30,
-                            WeaponStatType.FREEZE_DURATION: 3,
-                            WeaponStatType.SLOW_PERCENT: 50,
-                            WeaponStatType.COOLDOWN: 1.5
-                        },
-                        description="发射冰锥，造成单体伤害并减速敌人",
-                        icon_path="images/weapons/nova_32x32.png"
-                    ),
-                    WeaponUpgradeLevel(
-                        name="冰锥术",
-                        level=2,
-                        effects={
-                            WeaponStatType.DAMAGE: 25,
-                            WeaponStatType.EXPLOSION_RADIUS: 40,
-                            WeaponStatType.FREEZE_DURATION: 4,
-                            WeaponStatType.SLOW_PERCENT: 50,
-                            WeaponStatType.COOLDOWN: 1.5
-                        },
-                        description="造成爆炸范围和减速",
-                        icon_path="images/weapons/nova_32x32.png"
-                    ),
-                    WeaponUpgradeLevel(
-                        name="冰锥术",
-                        level=3,
-                        effects={
-                            WeaponStatType.DAMAGE: 35,
-                            WeaponStatType.EXPLOSION_RADIUS: 40,
-                            WeaponStatType.FREEZE_DURATION: 5,
-                            WeaponStatType.SLOW_PERCENT: 50,
-                            WeaponStatType.COOLDOWN: 1.2
-                        },
-                        description="提升伤害和减速效果，减少冷却时间",
-                        icon_path="images/weapons/nova_32x32.png"
-                    )
-                ]
-            )
-        }
+        # 武器升级配置 - 现在从武器配置数据中加载
+        self.weapon_upgrades = {}
+        self._load_weapon_upgrades_from_config()
         
         # 被动升级配置
         self.passive_upgrades = {
@@ -405,6 +263,27 @@ class UpgradeManager:
             )        
         }
         
+    def _load_weapon_upgrades_from_config(self):
+        """从武器配置数据中加载武器升级信息"""
+        for weapon_type, weapon_config in WEAPONS_CONFIG.items():
+            upgrade_levels = []
+            
+            for level_data in weapon_config['levels']:
+                upgrade_level = WeaponUpgradeLevel(
+                    name=weapon_config['name'],
+                    level=level_data['level'],
+                    effects=level_data['effects'],
+                    description=level_data['description'],
+                    icon_path=weapon_config['icon_path']
+                )
+                upgrade_levels.append(upgrade_level)
+                
+            self.weapon_upgrades[weapon_type] = WeaponUpgrade(
+                name=weapon_config['name'],
+                max_level=weapon_config['max_level'],
+                levels=upgrade_levels
+            )
+            
     def get_random_upgrades(self, player, count=3):
         """获取随机升级选项
         
