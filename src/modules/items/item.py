@@ -17,7 +17,7 @@ class Item(pygame.sprite.Sprite):
                                                          frame_width=16, frame_height=16,
                                                          frame_count=1, row=0,
                                                          frame_duration=0.1).get_current_frame()
-            self.value = 50  # 经验值
+            self.value = 100  # 经验值
         elif item_type == 'coin':
             spritesheet = resource_manager.load_spritesheet('money_spritesheet', 'images/items/money.png')
             self.image = resource_manager.create_animation('coin', spritesheet,

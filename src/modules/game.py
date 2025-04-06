@@ -92,8 +92,9 @@ class Game:
                 print("存档数据损坏：缺少玩家数据")
                 return False
                 
-            # 创建新的玩家实例
-            self.player = Player(self.screen_center_x, self.screen_center_y)
+            # 创建新的玩家实例，使用存档中的英雄类型
+            hero_type = player_data.get('hero_type', 'ninja_frog')
+            self.player = Player(self.screen_center_x, self.screen_center_y, hero_type)
             
             # 设置玩家属性
             self.player.health = player_data.get('health', self.player.health)
@@ -103,6 +104,68 @@ class Game:
             self.player.coins = player_data.get('coins', 0)
             self.player.world_x = player_data.get('world_x', self.screen_center_x)
             self.player.world_y = player_data.get('world_y', self.screen_center_y)
+            
+            # 加载组件状态
+            component_states = player_data.get('component_states', {})
+            if component_states:
+                # 移动组件
+                movement_states = component_states.get('movement', {})
+                if movement_states:
+                    self.player.movement.speed = movement_states.get('speed', self.player.movement.speed)
+                
+                # 生命值组件
+                health_states = component_states.get('health', {})
+                if health_states:
+                    self.player.health_component.defense = health_states.get('defense', self.player.health_component.defense)
+                    self.player.health_component.health_regen = health_states.get('health_regen', self.player.health_component.health_regen)
+                
+                # 进阶组件
+                progression_states = component_states.get('progression', {})
+                if progression_states:
+                    self.player.progression.exp_multiplier = progression_states.get('exp_multiplier', self.player.progression.exp_multiplier)
+                    self.player.progression.luck = progression_states.get('luck', self.player.progression.luck)
+                
+                # 被动组件
+                passive_states = component_states.get('passive', {})
+                if passive_states and 'passive_levels' in passive_states:
+                    # 恢复被动技能状态
+                    passive_levels = passive_states['passive_levels']
+                    for passive_type, level in passive_levels.items():
+                        # 获取被动技能对应等级的效果
+                        if passive_type in self.upgrade_manager.passive_upgrades:
+                            upgrade = self.upgrade_manager.passive_upgrades[passive_type]
+                            # 查找对应等级的效果
+                            effect = None
+                            for lvl in upgrade.levels:
+                                if lvl.level == level:
+                                    effect = lvl.effects
+                                    break
+                            
+                            # 应用被动技能效果
+                            if effect:
+                                self.player.apply_passive_upgrade(passive_type, level, effect)
+                            else:
+                                # 如果找不到具体效果，直接设置等级
+                                self.player.passive_manager.passive_levels[passive_type] = level
+                        else:
+                            # 如果找不到具体升级，直接设置等级
+                            self.player.passive_manager.passive_levels[passive_type] = level
+                    
+                    # 更新状态以应用所有被动效果
+                    self.player._update_stats()
+            
+            # 加载武器
+            weapons_data = player_data.get('weapons', [])
+            if weapons_data:
+                # 清空现有武器
+                for weapon in list(self.player.weapons):
+                    self.player.weapon_manager.remove_weapon(weapon.type)
+                
+                # 添加存档中的武器
+                for weapon_type, level in weapons_data:
+                    weapon = self.player.add_weapon(weapon_type)
+                    if weapon:
+                        weapon.level = level
             
             # 初始化游戏管理器
             self.enemy_manager = EnemyManager()
@@ -229,6 +292,7 @@ class Game:
             selected_upgrade = self.upgrade_menu.handle_event(event)
             if selected_upgrade:
                 self._apply_upgrade(selected_upgrade)
+                self.upgrade_menu.hide()  # 关闭升级菜单，让游戏继续
             return True
             
         # ESC键暂停游戏

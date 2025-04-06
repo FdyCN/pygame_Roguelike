@@ -3,7 +3,6 @@ from ..resource_manager import resource_manager
 from enum import Enum, auto
 from .weapon_stats import WeaponStatType, DEFAULT_WEAPON_STATS
 import math
-from ..constants import DIRECTION_ANGLES
 
 class WeaponType(Enum):
     MELEE = auto()      # 近战武器
@@ -52,27 +51,29 @@ class Weapon(pygame.sprite.Sprite):
         # 造成伤害
         enemy.take_damage(projectile.damage)
         
-        # 检查穿透属性
-        if not hasattr(projectile, 'can_penetrate'):
-            return True
-            
         # 增加命中计数（只有在实际造成伤害时才增加）
         projectile.hit_count += 1
+        
+        # 检查穿透属性
+        if not hasattr(projectile, 'can_penetrate') or not projectile.can_penetrate:
+            return True
             
         # 如果投射物可以穿透且未达到最大穿透次数，继续保持投射物
-        if projectile.can_penetrate and projectile.hit_count < projectile.max_penetration:
+        if projectile.hit_count < projectile.max_penetration:
             # 每次穿透后降低伤害
             projectile.damage *= (1 - projectile.penetration_damage_reduction)
             return False
             
         return True
         
-    def _apply_player_attack_power(self):
+    def _apply_player_attack_power(self, attack_power=None):
         """应用玩家的攻击力加成到武器伤害"""
         if WeaponStatType.DAMAGE in self.current_stats:
             # 使用当前伤害值乘以玩家攻击力加成
             current_damage = self.current_stats[WeaponStatType.DAMAGE]
-            self.current_stats[WeaponStatType.DAMAGE] = int(current_damage * self.player.attack_power)
+            # 如果提供了attack_power参数，则使用它，否则使用player的值
+            multiplier = attack_power if attack_power is not None else self.player.attack_power
+            self.current_stats[WeaponStatType.DAMAGE] = int(current_damage * multiplier)
         
     def apply_effects(self, effects):
         """应用升级效果"""
@@ -109,21 +110,25 @@ class Weapon(pygame.sprite.Sprite):
         self.attack_timer += dt
         
     def get_player_direction(self):
-        """获取玩家的攻击方向"""
-        direction_x = self.player.direction.x
-        direction_y = self.player.direction.y
+        """获取玩家朝向的方向向量"""
+        direction_x = self.player.movement.direction.x
+        direction_y = self.player.movement.direction.y
         
-        # 如果玩家没有移动，使用最后的移动方向和角度
+        # 如果玩家不在移动（方向为0,0），则使用上一个非零方向或默认朝向右侧
         if direction_x == 0 and direction_y == 0:
-            direction_x = self.player.last_movement_direction.x
-            direction_y = self.player.last_movement_direction.y
-
+            if hasattr(self.player.movement, 'last_movement_direction'):
+                direction_x = self.player.movement.last_movement_direction.x
+                direction_y = self.player.movement.last_movement_direction.y
+            else:
+                direction_x = 1  # 默认朝向右侧
+                direction_y = 0
+        
         # 标准化方向向量
-        length = (direction_x**2 + direction_y**2) ** 0.5
-        if length > 0:
-            direction_x /= length
-            direction_y /= length
-            
+        magnitude = math.sqrt(direction_x ** 2 + direction_y ** 2)
+        if magnitude > 0:
+            direction_x /= magnitude
+            direction_y /= magnitude
+        
         return direction_x, direction_y
     
     def render(self, screen, camera_x, camera_y):

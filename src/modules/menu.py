@@ -273,9 +273,9 @@ class UpgradeMenu(Menu):
         self.player = player
         self.game = game
         # 重置玩家的移动状态
-        self.player.moving = {'up': False, 'down': False, 'left': False, 'right': False}
-        self.player.direction.x = 0
-        self.player.direction.y = 0
+        self.player.movement.moving = {'up': False, 'down': False, 'left': False, 'right': False}
+        self.player.movement.direction.x = 0
+        self.player.movement.direction.y = 0
         
         # 从Game的upgrade_manager获取可用的升级选项
         self.options = self.game.upgrade_manager.get_random_upgrades(player)
@@ -286,9 +286,9 @@ class UpgradeMenu(Menu):
         super().hide()
         if self.player:
             # 确保在关闭菜单时重置移动状态
-            self.player.moving = {'up': False, 'down': False, 'left': False, 'right': False}
-            self.player.direction.x = 0
-            self.player.direction.y = 0
+            self.player.movement.moving = {'up': False, 'down': False, 'left': False, 'right': False}
+            self.player.movement.direction.x = 0
+            self.player.movement.direction.y = 0
         
     def handle_event(self, event):
         if not self.is_active:

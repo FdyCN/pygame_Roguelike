@@ -40,6 +40,8 @@ class FireballProjectile(pygame.sprite.Sprite):
         self.scale = 1.0
         self.pulse_time = 0
         self.pulse_duration = 0.5
+
+        self.hit_count = 0  # 命中敌人计数
         
         # 初始方向
         self._update_direction()

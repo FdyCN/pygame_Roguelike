@@ -35,7 +35,24 @@ class SaveSystem:
                 'coins': game_state.player.coins,
                 'world_x': game_state.player.world_x,
                 'world_y': game_state.player.world_y,
-                'weapons': [(w.type, w.level) for w in game_state.player.weapons]
+                'weapons': [(w.type, w.level) for w in game_state.player.weapons],
+                'hero_type': game_state.player.hero_type,
+                'component_states': {
+                    'movement': {
+                        'speed': game_state.player.movement.speed
+                    },
+                    'health': {
+                        'defense': game_state.player.health_component.defense,
+                        'health_regen': game_state.player.health_component.health_regen
+                    },
+                    'progression': {
+                        'exp_multiplier': game_state.player.progression.exp_multiplier,
+                        'luck': game_state.player.progression.luck
+                    },
+                    'passive': {
+                        'passive_levels': game_state.player.passive_levels
+                    }
+                }
             },
             'game_data': {
                 'score': game_state.score,
@@ -102,7 +119,8 @@ class SaveSystem:
             'screenshot_path': screenshot_path if os.path.exists(screenshot_path) else None,
             'timestamp': save_data['timestamp'],
             'player_level': save_data['player_data']['level'],
-            'game_time': save_data['game_data']['game_time']
+            'game_time': save_data['game_data']['game_time'],
+            'hero_type': save_data['player_data'].get('hero_type', 'ninja_frog')
         }
         
     def get_all_saves(self):

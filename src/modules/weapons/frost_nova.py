@@ -1,5 +1,6 @@
 import pygame
 import math
+import random
 from ..resource_manager import resource_manager
 from .weapon import Weapon
 from .weapon_stats import WeaponStatType, WeaponStatsDict
@@ -40,6 +41,8 @@ class FrostNovaProjectile(pygame.sprite.Sprite):
         self.scale = 1.0
         self.pulse_time = 0
         self.pulse_duration = 0.5
+
+        self.hit_count = 0  # 命中敌人计数
         
         # 初始方向
         self._update_direction()
@@ -100,6 +103,48 @@ class FrostNovaProjectile(pygame.sprite.Sprite):
         draw_x = screen_x - scaled_image.get_width() / 2
         draw_y = screen_y - scaled_image.get_height() / 2
         screen.blit(scaled_image, (draw_x, draw_y))
+
+    def apply_slow_effect(self, enemy, slow_amount=None):
+        """对敌人应用减速效果
+        
+        参数:
+            enemy (Enemy): 要减速的敌人对象
+            slow_amount (float, optional): 减速系数，范围[0-1]。如果未提供，使用projectile的slow_amount。
+        """
+        if slow_amount is None:
+            slow_amount = self.slow_amount
+        
+        # 保存敌人原始速度（如果尚未保存）
+        if not hasattr(enemy, 'original_speed') or enemy.original_speed is None:
+            enemy.original_speed = enemy.speed
+            
+        # 应用减速效果
+        enemy.speed = enemy.original_speed * (1 - slow_amount)
+        
+        # 设置敌人的减速状态和持续时间
+        enemy.is_slowed = True
+        enemy.slow_timer = self.slow_duration
+        
+    def calculate_direction(self):
+        """计算朝向目标的方向向量"""
+        if self.target:
+            # 计算到目标的方向
+            dx = self.target.rect.centerx - self.rect.centerx
+            dy = self.target.rect.centery - self.rect.centery
+            
+            # 标准化方向向量
+            distance = math.sqrt(dx**2 + dy**2)
+            if distance > 0:
+                self.direction_x = dx / distance
+                self.direction_y = dy / distance
+            else:
+                # 目标与投射物在同一位置，选择随机方向
+                self.direction_x = random.uniform(-1, 1)
+                self.direction_y = random.uniform(-1, 1)
+                # 标准化随机方向
+                random_dir_length = math.sqrt(self.direction_x**2 + self.direction_y**2)
+                self.direction_x /= random_dir_length
+                self.direction_y /= random_dir_length
 
 class FrostNova(Weapon):
     def __init__(self, player):

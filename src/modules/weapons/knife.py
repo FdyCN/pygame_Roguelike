@@ -5,56 +5,52 @@ from .weapon import Weapon
 from .weapon_stats import WeaponStatType, WeaponStatsDict
 
 class ThrownKnife(pygame.sprite.Sprite):
+    """飞刀投射物类"""
+    
     def __init__(self, x, y, direction_x, direction_y, stats):
         super().__init__()
-        self.image = resource_manager.load_image('weapon_knife', 'images/weapons/knife_32x32.png')
-        
-        # 首先将图片旋转45度，使刀柄朝左，刀尖朝右
-        base_image = pygame.transform.rotate(self.image, -45)
-        
-        # 然后根据飞行方向旋转图像
-        # 计算飞行方向的角度（以水平向右为0度）
+        # 从资源管理器获取飞刀图像并旋转
+        original_image = resource_manager.load_image('weapon_knife', 'images/weapons/knife_32x32.png')
+        # 计算需要旋转的角度
         angle = math.degrees(math.atan2(direction_y, direction_x))
-        self.image = pygame.transform.rotate(base_image, -angle)
+        # 原始图片刀尖朝上（-90度），需要调整基础角度
+        base_angle = -45
+        final_angle = -(angle - base_angle)
+        self.image = pygame.transform.rotate(original_image, final_angle)
         self.rect = self.image.get_rect()
-        self.rect.center = (x, y)
+        self.rect.center = (int(x), int(y))
         
-        # 起始位置和当前位置（世界坐标）
-        self.start_x = float(x)
-        self.start_y = float(y)
+        # 设置飞刀属性
+        self.start_x = float(x)  # 起始x坐标，用于动画
+        self.start_y = float(y)  # 起始y坐标，用于动画
         self.world_x = float(x)
         self.world_y = float(y)
+        self.direction_x = float(direction_x)
+        self.direction_y = float(direction_y)
+        self.damage = stats.get(WeaponStatType.DAMAGE, 20)  # 默认伤害20
+        self.speed = stats.get(WeaponStatType.PROJECTILE_SPEED, 400)  # 默认速度400
+        self.lifetime = stats.get(WeaponStatType.LIFETIME, 3.0)  # 默认生命周期3秒
         
-        # 投掷属性
-        self.direction_x = direction_x
-        self.direction_y = direction_y
-        self.damage = stats.get(WeaponStatType.DAMAGE, 20)
-        self.speed = stats.get(WeaponStatType.PROJECTILE_SPEED, 400)
-        
-        # 穿透属性
+        # 穿透相关属性
         self.can_penetrate = stats.get(WeaponStatType.CAN_PENETRATE, False)
-        self.max_penetration = stats.get(WeaponStatType.MAX_PENETRATION, 1)
+        self.max_penetration = stats.get(WeaponStatType.MAX_PENETRATION, 0)
         self.penetration_damage_reduction = stats.get(WeaponStatType.PENETRATION_DAMAGE_REDUCTION, 0.2)
-        self.hit_count = 0  # 初始化命中计数
+        self.hit_count = 0  # 命中敌人计数
         
         # 投掷动画相关
-        # 目前暂时没有用到，感觉往后也不会就用到。。。
-        self.throw_time = 0
-        self.throw_duration = 0.15
-        self.throw_progress = 0
+        self.throw_duration = 0.1  # 投掷动画持续时间
+        self.throw_timer = 0  # 投掷动画计时器
+        self.throw_progress = 0  # 投掷动画进度
         
-        # 存活时间
-        self.lifetime = stats.get(WeaponStatType.LIFETIME, 3.0)
+        # 存活时间跟踪
+        self.time_alive = 0
         
     def update(self, dt):
         # 更新投掷动画进度
-        # FIXME: 看起来多此一举，加了缩放反而感觉卡顿。
-        if self.throw_time < self.throw_duration:
-            self.throw_time += dt
-            self.throw_progress = min(1.0, self.throw_time / self.throw_duration)
-            
-            # 使用缓动函数使动画更平滑
-            progress = self._ease_out_quad(self.throw_progress)
+        if self.throw_timer < self.throw_duration:
+            self.throw_timer += dt
+            progress = min(self.throw_timer / self.throw_duration, 1.0)
+            self.throw_progress = progress
             
             # 从玩家位置插值到目标位置
             target_x = self.start_x + self.direction_x * self.speed * self.throw_duration
@@ -66,22 +62,15 @@ class ThrownKnife(pygame.sprite.Sprite):
             # 投掷动画结束后，正常移动
             self.world_x += self.direction_x * self.speed * dt
             self.world_y += self.direction_y * self.speed * dt
-            
+        
         # 更新碰撞盒位置
-        self.rect.centerx = round(self.world_x)
-        self.rect.centery = round(self.world_y)
+        self.rect.centerx = int(self.world_x)
+        self.rect.centery = int(self.world_y)
         
         # 更新存活时间
-        self.lifetime -= dt
-        if self.lifetime <= 0:
+        self.time_alive += dt
+        if self.time_alive >= self.lifetime:
             self.kill()
-            
-    def _ease_out_quad(self, t):
-        """
-        缓动函数，使动画更自然
-        t: 0-1之间的值
-        """
-        return -t * (t - 2)
             
     def render(self, screen, camera_x, camera_y):
         # 计算屏幕位置（相对于相机的偏移）
@@ -90,7 +79,7 @@ class ThrownKnife(pygame.sprite.Sprite):
         
         # 根据投掷进度缩放图像
         # FIXME: 这里会让小刀变大，感觉很奇怪。 和update中的平滑同时关闭，感觉会好一些。
-        if self.throw_time < self.throw_duration:
+        if self.throw_timer < self.throw_duration:
             # 在投掷开始时略微放大，然后恢复正常大小
             scale = 1.0 + 0.5 * (1.0 - self.throw_progress)
             scaled_image = pygame.transform.scale(

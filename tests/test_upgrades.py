@@ -92,7 +92,7 @@ class TestUpgrades(unittest.TestCase):
             
     def test_passive_upgrade_health(self):
         """测试生命值被动升级效果"""
-        initial_max_health = self.player.max_health
+        initial_max_health = self.player.health_component.max_health
         
         # 获取1级生命强化升级
         health_upgrade = self.upgrade_manager.passive_upgrades['health'].levels[0]
@@ -101,11 +101,11 @@ class TestUpgrades(unittest.TestCase):
         self.player.apply_passive_upgrade('health', 1, health_upgrade.effects)
         
         # 验证最大生命值增加了50
-        self.assertEqual(self.player.max_health, initial_max_health + 50)
+        self.assertEqual(self.player.health_component.max_health, initial_max_health + 50)
         
     def test_passive_upgrade_speed(self):
         """测试移动速度被动升级效果"""
-        initial_speed = self.player.speed
+        initial_speed = self.player.movement.speed
         
         # 获取1级迅捷升级
         speed_upgrade = self.upgrade_manager.passive_upgrades['speed'].levels[0]
@@ -115,7 +115,7 @@ class TestUpgrades(unittest.TestCase):
         
         # 验证移动速度提升了10%
         expected_speed = initial_speed * 1.1
-        self.assertAlmostEqual(self.player.speed, expected_speed, places=1)
+        self.assertAlmostEqual(self.player.movement.speed, expected_speed, places=1)
         
     def test_weapon_limit(self):
         """测试武器数量限制"""
@@ -169,8 +169,8 @@ class TestUpgrades(unittest.TestCase):
         
     def test_passive_upgrade_health_regen(self):
         """测试生命恢复被动升级效果"""
-        initial_health = self.player.health
-        self.player.health = 50  # 设置当前生命值为50
+        initial_health = self.player.health_component.health
+        self.player.health_component.health = 50  # 设置当前生命值为50
         
         # 获取1级生命恢复升级
         health_regen_upgrade = self.upgrade_manager.passive_upgrades['health_regen'].levels[0]
@@ -179,13 +179,13 @@ class TestUpgrades(unittest.TestCase):
         self.player.apply_passive_upgrade('health_regen', 1, {'health_regen': 1})
         
         # 验证生命恢复速率是否正确
-        self.assertEqual(self.player.health_regen, 1)
+        self.assertEqual(self.player.health_component.health_regen, 1)
         
         # 模拟1秒的游戏时间
         self.player.update(1.0)
         
         # 验证生命值是否恢复了1点
-        self.assertEqual(self.player.health, 51)
+        self.assertEqual(self.player.health_component.health, 51)
         
     def test_passive_upgrade_defense(self):
         """测试防御力被动升级效果"""
@@ -196,15 +196,15 @@ class TestUpgrades(unittest.TestCase):
         self.player.apply_passive_upgrade('defense', 1, {'defense': 0.1})
         
         # 验证防御力是否正确
-        self.assertEqual(self.player.defense, 0.1)
+        self.assertEqual(self.player.health_component.defense, 0.1)
         
         # 模拟受到100点伤害
-        initial_health = self.player.health
+        initial_health = self.player.health_component.health
         self.player.take_damage(100)
         
         # 验证实际受到的伤害是否为90点（100 * (1-0.1)）
         expected_health = initial_health - 90
-        self.assertEqual(self.player.health, expected_health)
+        self.assertEqual(self.player.health_component.health, expected_health)
         
     def test_passive_upgrade_luck(self):
         """测试幸运值被动升级效果"""
@@ -215,7 +215,7 @@ class TestUpgrades(unittest.TestCase):
         self.player.apply_passive_upgrade('luck', 1, {'luck': 0.2})
         
         # 验证幸运值是否正确（基础值1.0 * (1 + 0.2) = 1.2）
-        self.assertAlmostEqual(self.player.luck, 1.2)
+        self.assertAlmostEqual(self.player.progression.luck, 1.2)
         
     def test_multiple_passive_upgrades(self):
         """测试多个被动升级的叠加效果"""
@@ -225,22 +225,22 @@ class TestUpgrades(unittest.TestCase):
         self.player.apply_passive_upgrade('luck', 1, {'luck': 0.5})  # 使用正确的1级效果值
         
         # 验证所有属性是否正确
-        self.assertEqual(self.player.health_regen, 1)  # 1级生命恢复为1
-        self.assertEqual(self.player.defense, 0.1)  # 1级防御为0.1
-        self.assertAlmostEqual(self.player.luck, 1.5)  # 基础值1.0 * (1 + 0.5) = 1.5
+        self.assertEqual(self.player.health_component.health_regen, 1)  # 1级生命恢复为1
+        self.assertEqual(self.player.health_component.defense, 0.1)  # 1级防御为0.1
+        self.assertAlmostEqual(self.player.progression.luck, 1.5)  # 基础值1.0 * (1 + 0.5) = 1.5
         
         # 测试生命恢复效果
-        self.player.health = 50
+        self.player.health_component.health = 50
         self.player.update(1.0)
-        self.assertEqual(self.player.health, 51)  # 1秒恢复1点生命
+        self.assertEqual(self.player.health_component.health, 51)  # 1秒恢复1点生命
         
         # 测试减伤效果
-        initial_health = self.player.health
+        initial_health = self.player.health_component.health
         damage = 100
         self.player.take_damage(damage)
         expected_damage = damage * (1 - 0.1)  # 100 * (1-0.1) = 90
         expected_health = max(0, initial_health - expected_damage)  # 确保生命值不会低于0
-        self.assertEqual(self.player.health, expected_health)
+        self.assertEqual(self.player.health_component.health, expected_health)
         
     def test_passive_upgrade_limits(self):
         """测试被动升级的数量限制"""
@@ -264,15 +264,15 @@ class TestUpgrades(unittest.TestCase):
         """测试相同被动升级的堆叠效果"""
         # 应用1级生命恢复
         self.player.apply_passive_upgrade('health_regen', 1, {'health_regen': 1})
-        self.assertEqual(self.player.health_regen, 1)
+        self.assertEqual(self.player.health_component.health_regen, 1)
         
         # 应用2级生命恢复（应该覆盖1级效果）
         self.player.apply_passive_upgrade('health_regen', 2, {'health_regen': 2})
-        self.assertEqual(self.player.health_regen, 2)
+        self.assertEqual(self.player.health_component.health_regen, 2)
         
         # 应用3级生命恢复（应该覆盖2级效果）
         self.player.apply_passive_upgrade('health_regen', 3, {'health_regen': 3})
-        self.assertEqual(self.player.health_regen, 3)
+        self.assertEqual(self.player.health_component.health_regen, 3)
         
     def test_passive_upgrade_pickup_range(self):
         """测试拾取范围被动升级效果"""
@@ -387,7 +387,7 @@ class TestUpgrades(unittest.TestCase):
         base_health_rate = base_health / test_iterations
         
         # 测试幸运值加成后的掉落率
-        self.player.luck = 2.0  # 设置幸运值为200%
+        self.player.progression.luck = 2.0  # 设置幸运值为200%
         lucky_coins = 0
         lucky_health = 0
         
