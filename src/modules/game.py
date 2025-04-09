@@ -98,10 +98,10 @@ class Game:
             
             # 设置玩家属性
             self.player.health = player_data.get('health', self.player.health)
-            self.player.max_health = player_data.get('max_health', self.player.max_health)
-            self.player.level = player_data.get('level', self.player.level)
-            self.player.experience = player_data.get('experience', 0)
-            self.player.coins = player_data.get('coins', 0)
+            self.player.health_component.max_health = player_data.get('max_health', self.player.health_component.max_health)
+            self.player.progression.level = player_data.get('level', self.player.progression.level)
+            self.player.progression.experience = player_data.get('experience', 0)
+            self.player.progression.coins = player_data.get('coins', 0)
             self.player.world_x = player_data.get('world_x', self.screen_center_x)
             self.player.world_y = player_data.get('world_y', self.screen_center_y)
             
@@ -112,6 +112,21 @@ class Game:
                 movement_states = component_states.get('movement', {})
                 if movement_states:
                     self.player.movement.speed = movement_states.get('speed', self.player.movement.speed)
+                    # 重置移动状态，确保加载存档后可以正常移动
+                    self.player.movement.direction = pygame.math.Vector2(0, 0)
+                    self.player.movement.velocity = pygame.math.Vector2(0, 0)
+                    self.player.movement.moving = {
+                        'up': False, 
+                        'down': False, 
+                        'left': False, 
+                        'right': False
+                    }
+                    # 保留朝向状态，如果有的话
+                    if 'facing_right' in movement_states:
+                        self.player.movement.facing_right = movement_states.get('facing_right')
+                    if 'last_direction_x' in movement_states and 'last_direction_y' in movement_states:
+                        self.player.movement.last_movement_direction.x = movement_states.get('last_direction_x', 1)
+                        self.player.movement.last_movement_direction.y = movement_states.get('last_direction_y', 0)
                 
                 # 生命值组件
                 health_states = component_states.get('health', {})
@@ -231,7 +246,7 @@ class Game:
                 print("显示读取菜单")  # 调试信息
                 self.load_menu.show()
             elif action == "quit":
-                return "quit"
+                self.running = False  # 设置running为False以退出游戏
             return
             
         # 如果在暂停菜单中且读取菜单激活

@@ -25,6 +25,7 @@ class SaveSystem:
             raise ValueError("存档位置必须在1-3之间")
             
         # 创建存档数据
+        # TODO: refactor, 存档读档似乎没有需求。
         save_data = {
             'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'player_data': {
