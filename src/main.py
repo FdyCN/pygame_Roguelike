@@ -7,7 +7,7 @@ def main():
     screen_width = 1280
     screen_height = 720
     screen = pygame.display.set_mode((screen_width, screen_height))
-    pygame.display.set_caption("吸血鬼幸存者")
+    pygame.display.set_caption("像素生存")
     
     clock = pygame.time.Clock()
     game = Game(screen)
