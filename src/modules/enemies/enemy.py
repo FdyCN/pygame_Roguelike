@@ -48,6 +48,20 @@ class Enemy(pygame.sprite.Sprite, ABC):
         """加载敌人的动画，子类必须实现"""
         pass
         
+    @abstractmethod
+    def attack(self, player, dt):
+        """
+        抽象攻击方法，子类必须实现
+        
+        Args:
+            player: 攻击目标（玩家）
+            dt: 时间增量
+            
+        Returns:
+            bool: 攻击是否命中
+        """
+        pass
+        
     def update(self, dt, player):
         # 更新无敌状态
         if self.invincible:
@@ -177,8 +191,16 @@ class Enemy(pygame.sprite.Sprite, ABC):
         
         return True
         
-    def attack_player(self, player):
-        """攻击玩家"""
+    def melee_attack(self, player):
+        """
+        近战碰撞攻击逻辑
+        
+        Args:
+            player: 攻击目标（玩家）
+            
+        Returns:
+            bool: 攻击是否命中
+        """
         # 计算与玩家的距离
         dx = self.rect.x - player.world_x
         dy = self.rect.y - player.world_y
@@ -189,6 +211,20 @@ class Enemy(pygame.sprite.Sprite, ABC):
             player.take_damage(self.damage)
             return True
         return False
+        
+    def attack_player(self, player):
+        """
+        攻击玩家方法，调用子类实现的attack方法
+        保持向后兼容性
+        
+        Args:
+            player: 攻击目标（玩家）
+            
+        Returns:
+            bool: 攻击是否命中
+        """
+        # 使用一个很小的时间增量，保持现有行为一致
+        return self.attack(player, 0.016)  # 约等于60fps的时间增量
 
     def kill(self):
         """重写 kill 方法，确保正确处理存活状态"""

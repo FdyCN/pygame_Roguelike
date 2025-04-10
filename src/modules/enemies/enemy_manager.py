@@ -1,7 +1,7 @@
 import pygame
 import random
 import math
-from .types import Ghost, Radish, Bat
+from .types import Ghost, Radish, Bat, Slime
 
 class EnemyManager:
     def __init__(self):
@@ -32,6 +32,8 @@ class EnemyManager:
             enemy = Radish(x, y)
         elif enemy_type == 'bat':
             enemy = Bat(x, y)
+        elif enemy_type == 'slime':
+            enemy = Slime(x, y)
             
         if enemy and health is not None:
             enemy.health = health
@@ -95,9 +97,9 @@ class EnemyManager:
         
         # 根据游戏时间决定生成什么类型的敌人
         if self.game_time < 10:  # 游戏开始10秒内
-            self.spawn_enemy('ghost', x, y)
+            self.spawn_enemy('slime', x, y)
         else:  # 10秒后可以生成幽灵和萝卜
-            enemy_type = random.choice(['ghost', 'radish'])
+            enemy_type = random.choice(['ghost', 'radish', 'slime'])
             self.spawn_enemy(enemy_type, x, y)
             
     def spawn_bat(self, player):

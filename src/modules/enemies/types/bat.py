@@ -55,3 +55,16 @@ class Bat(Enemy):
                 frame_duration=0.0333 
             )
         } 
+
+    def attack(self, player, dt):
+        """
+        实现基类的抽象方法，对于蝙蝠，使用近战碰撞攻击
+        
+        Args:
+            player: 攻击目标（玩家）
+            dt: 时间增量
+            
+        Returns:
+            bool: 攻击是否命中
+        """
+        return self.melee_attack(player) 

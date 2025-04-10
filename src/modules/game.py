@@ -509,13 +509,7 @@ class Game:
         # 检测玩家和敌人的碰撞
         for enemy in self.enemy_manager.enemies:
             if not self.player.invincible:  # 只在玩家不处于无敌状态时检测碰撞
-                dx = enemy.rect.x - self.player.world_x
-                dy = enemy.rect.y - self.player.world_y
-                distance = (dx**2 + dy**2)**0.5
-                
-                if distance < enemy.rect.width / 2 + self.player.rect.width / 2:
-                    # 玩家受到伤害
-                    self.player.take_damage(enemy.damage)
+                if enemy.attack_player(self.player):
                     # 播放受伤音效
                     resource_manager.play_sound("player_hurt")
                     break  # 一次只处理一个碰撞
