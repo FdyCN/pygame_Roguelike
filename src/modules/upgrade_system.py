@@ -298,25 +298,28 @@ class UpgradeManager:
         candidate_pool = []
         
         # 检查是否所有武器和被动都已满级
-        all_maxed = True
+        all_weapons_maxed = True
+        all_passives_maxed = True
         
         # 检查武器
         for weapon in player.weapons:
             if weapon.type in self.weapon_upgrades:
                 weapon_upgrade = self.weapon_upgrades[weapon.type]
                 if weapon.level < weapon_upgrade.max_level:
-                    all_maxed = False
-                    break
+                    all_weapons_maxed = False
                     
         # 检查被动
-        if all_maxed:
-            for passive_type in player.passives:
-                if passive_type in self.passive_upgrades:
-                    passive_upgrade = self.passive_upgrades[passive_type]
-                    current_level = player.passive_levels.get(passive_type, 0)
-                    if current_level < passive_upgrade.max_level:
-                        all_maxed = False
-                        break
+        for passive_type in player.passives:
+            if passive_type in self.passive_upgrades:
+                passive_upgrade = self.passive_upgrades[passive_type]
+                current_level = player.passive_levels.get(passive_type, 0)
+                if current_level < passive_upgrade.max_level:
+                    all_passives_maxed = False
+        
+        # 检查是否武器槽和被动槽已满且都已满级
+        weapons_full = len(player.weapons) >= 3
+        passives_full = len(player.passives) >= 3
+        all_maxed = (weapons_full and all_weapons_maxed) and (passives_full and all_passives_maxed)
         
         # 创建一个金币奖励选项
         coin_reward = self.passive_upgrades['coins'].levels[0]
@@ -325,10 +328,6 @@ class UpgradeManager:
         if all_maxed:
             return [coin_reward] * count
             
-        # 检查武器槽和被动槽是否已满
-        weapons_full = len(player.weapons) >= 3
-        passives_full = len(player.passives) >= 3
-        
         # 如果两个槽都满了，只添加现有武器和被动的升级选项
         if weapons_full and passives_full:
             # 添加现有武器的升级选项

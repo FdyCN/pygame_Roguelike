@@ -8,7 +8,8 @@ class EnemyManager:
         self.enemies = []
         self.spawn_timer = 0
         self.spawn_interval = 1.0  # 每秒生成一个敌人
-        self.difficulty = 1
+        self.difficulty = "normal"  # 默认难度为normal
+        self.difficulty_level = 1   # 难度等级，随游戏时间增长
         self.game_time = 0  # 游戏进行时间
         self.bat_spawn_timer = 0  # 蝙蝠生成计时器
         
@@ -16,7 +17,7 @@ class EnemyManager:
         """在指定位置生成指定类型和生命值的敌人
         
         Args:
-            enemy_type: 敌人类型 ('ghost', 'radish', 'bat')
+            enemy_type: 敌人类型 ('ghost', 'radish', 'bat', 'slime')
             x: 世界坐标系中的x坐标
             y: 世界坐标系中的y坐标
             health: 指定生命值，如果为None则使用该类型的默认生命值
@@ -26,15 +27,18 @@ class EnemyManager:
         """
         # 根据类型创建对应的敌人实例
         enemy = None
+        
+        # 使用新的构造函数，传递敌人类型、难度和等级
         if enemy_type == 'ghost':
-            enemy = Ghost(x, y)
+            enemy = Ghost(x, y, enemy_type, self.difficulty, self.difficulty_level)
         elif enemy_type == 'radish':
-            enemy = Radish(x, y)
+            enemy = Radish(x, y, enemy_type, self.difficulty, self.difficulty_level)
         elif enemy_type == 'bat':
-            enemy = Bat(x, y)
+            enemy = Bat(x, y, enemy_type, self.difficulty, self.difficulty_level)
         elif enemy_type == 'slime':
-            enemy = Slime(x, y)
+            enemy = Slime(x, y, enemy_type, self.difficulty, self.difficulty_level)
             
+        # 如果指定了生命值，覆盖配置的生命值
         if enemy and health is not None:
             enemy.health = health
             enemy.max_health = health
@@ -47,6 +51,9 @@ class EnemyManager:
     def update(self, dt, player):
         self.game_time += dt
         self.spawn_timer += dt
+        
+        # 更新难度等级（根据游戏时间）
+        self.difficulty_level = max(1, int(self.game_time // 60) + 1)  # 每60秒提升一级
         
         # 根据时间和玩家等级生成敌人
         if self.spawn_timer >= self.spawn_interval:
@@ -101,6 +108,14 @@ class EnemyManager:
         else:  # 10秒后可以生成幽灵和萝卜
             enemy_type = random.choice(['ghost', 'radish', 'slime'])
             self.spawn_enemy(enemy_type, x, y)
+            
+    def set_difficulty(self, difficulty):
+        """设置游戏难度
+        
+        Args:
+            difficulty (str): 难度级别 ('easy', 'normal', 'hard', 'nightmare')
+        """
+        self.difficulty = difficulty
             
     def spawn_bat(self, player):
         """在玩家周围生成一个蝙蝠"""

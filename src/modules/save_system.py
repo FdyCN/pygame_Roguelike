@@ -56,7 +56,7 @@ class SaveSystem:
                 }
             },
             'game_data': {
-                'score': game_state.score,
+                'kill_num': game_state.kill_num,
                 'game_time': game_state.game_time,
                 'level': game_state.level
             },

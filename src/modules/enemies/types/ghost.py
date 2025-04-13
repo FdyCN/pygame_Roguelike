@@ -3,15 +3,9 @@ from ...resource_manager import resource_manager
 import pygame
 
 class Ghost(Enemy):
-    def __init__(self, x, y, scale=1.0):
-        # 幽灵的基础属性
-        health = 50
-        damage = 10
-        speed = 100
-        
-        super().__init__(x, y, health, damage, speed, scale)
-        self.type = 'ghost'
-        self.score_value = 10
+    def __init__(self, x, y, enemy_type='ghost', difficulty="normal", level=1, scale=None):
+        # 调用基类构造函数，传递敌人类型、难度和等级
+        super().__init__(x, y, enemy_type, difficulty, level, scale)
         
         # 加载动画
         self.load_animations()
@@ -26,6 +20,9 @@ class Ghost(Enemy):
         
     def load_animations(self):
         """加载幽灵的动画"""
+        # 获取配置中的动画速度
+        animation_speed = self.config.get("animation_speed", 0.0333)
+        
         # 加载精灵表
         idle_spritesheet = resource_manager.load_spritesheet(
             'ghost_idle_spritesheet', 'images/enemy/Ghost_Idle.png')
@@ -39,26 +36,14 @@ class Ghost(Enemy):
             'idle': resource_manager.create_animation('enemy_idle', idle_spritesheet, 
                                                     frame_width=44, frame_height=30,
                                                     frame_count=10, row=0,
-                                                    frame_duration=0.0333),  # 30 FPS
+                                                    frame_duration=animation_speed),
             'walk': resource_manager.create_animation('enemy_walk', walk_spritesheet,
                                                     frame_width=44, frame_height=30,
                                                     frame_count=10, row=0,
-                                                    frame_duration=0.0333),  # 30 FPS
+                                                    frame_duration=animation_speed),
             'hurt': resource_manager.create_animation('enemy_hurt', hurt_spritesheet,
                                                     frame_width=44, frame_height=30,
                                                     frame_count=10, row=0,
-                                                    frame_duration=0.0333),  # 30 FPS
+                                                    frame_duration=animation_speed),
         }
         
-    def attack(self, player, dt):
-        """
-        实现基类的抽象方法，对于幽灵，使用近战碰撞攻击
-        
-        Args:
-            player: 攻击目标（玩家）
-            dt: 时间增量
-            
-        Returns:
-            bool: 攻击是否命中
-        """
-        return self.melee_attack(player)

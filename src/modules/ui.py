@@ -7,7 +7,7 @@ class UI:
     def __init__(self, screen):
         self.screen = screen
         pygame.font.init()
-        self.font = FontManager.get_font(36)
+        self.font = FontManager.get_font(24)
         self.small_font = FontManager.get_font(24)  # 较小的字体用于时间显示
         
         # UI颜色
@@ -25,17 +25,17 @@ class UI:
         self.icon_spacing = 10  # 图标之间的间距
         
         # 加载金币图标
-        spritesheet = resource_manager.load_spritesheet('money_spritesheet', 'images/items/money.png')
-        self.coin_icon = resource_manager.create_animation('coin', spritesheet,
-                                                         frame_width=16, frame_height=16,
-                                                         frame_count=1, row=0,
-                                                         frame_duration=0.1).get_current_frame()
+        self.coin_icon = resource_manager.load_image('coin', 'images/items/coin_32x32.png')
         self.coin_icon = pygame.transform.scale(self.coin_icon, (24, 24))  # 调整金币图标大小
+        
+        # 加载击杀统计图标
+        self.kill_icon = resource_manager.load_image('kill_count', 'images/enemy/enemy_kill_32x32.png')
+        self.kill_icon = pygame.transform.scale(self.kill_icon, (24, 24))  # 调整击杀图标大小
         
         # 创建升级管理器实例用于获取图标
         self.upgrade_manager = UpgradeManager()
         
-    def render(self, player, game_time):
+    def render(self, player, game_time, game_kill_num):
         screen_width = self.screen.get_width()
         screen_height = self.screen.get_height()
         
@@ -47,6 +47,25 @@ class UI:
         exp_width = (player.experience / player.exp_to_next_level) * screen_width
         pygame.draw.rect(self.screen, self.exp_bar_color,
                         (0, 0, exp_width, self.bar_height))
+        
+        # 渲染等级文本（嵌入在经验条中间）
+        level_text = f"Lv.{player.level}"
+        
+        # 创建文本对象以获取尺寸
+        text = self.font.render(level_text, True, self.text_color)
+        text_rect = text.get_rect()
+        text_rect.centerx = screen_width // 2
+        text_rect.centery = self.bar_height // 2
+        
+        # 渲染文本阴影（略微偏移）
+        shadow_text = self.font.render(level_text, True, (0, 0, 0))
+        shadow_rect = shadow_text.get_rect()
+        shadow_rect.centerx = screen_width // 2 + 2
+        shadow_rect.centery = self.bar_height // 2 + 2
+        self.screen.blit(shadow_text, shadow_rect)
+        
+        # 渲染主文本
+        self.screen.blit(text, text_rect)
         
         # 绘制生命槽背景（底部）
         pygame.draw.rect(self.screen, self.health_back_color,
@@ -121,14 +140,7 @@ class UI:
                             scaled_icon = pygame.transform.scale(icon, (self.icon_size, self.icon_size))
                             self.screen.blit(scaled_icon, icon_rect)
         
-        # 渲染等级文本（在经验条下方居中）
-        level_text = self.font.render(f"Level {player.level}", True, self.text_color)
-        level_rect = level_text.get_rect()
-        level_rect.centerx = screen_width // 2
-        level_rect.top = self.bar_height + self.margin
-        self.screen.blit(level_text, level_rect)
-        
-        # 渲染游戏时间（经验条左下方）
+        # 渲染游戏时间（左上角，紧贴经验条下方）
         minutes = int(game_time // 60)
         seconds = int(game_time % 60)
         time_text = self.small_font.render(f"{minutes:02d}:{seconds:02d}", True, self.text_color)
@@ -137,7 +149,25 @@ class UI:
         time_rect.top = self.bar_height + self.margin
         self.screen.blit(time_text, time_rect)
         
-        # 渲染金币数量和图标（经验条右下方）
+        # 渲染击杀统计（中间，紧贴经验条下方）
+        kill_count = game_kill_num
+        kill_text = self.font.render(str(kill_count), True, self.text_color)
+        kill_text_rect = kill_text.get_rect()
+        kill_icon_rect = self.kill_icon.get_rect()
+        
+        # 计算击杀统计文本和图标的位置（居中）
+        total_width = kill_icon_rect.width + 5 + kill_text_rect.width
+        center_x = screen_width // 2
+        kill_icon_rect.right = center_x - 5
+        kill_icon_rect.top = self.bar_height + self.margin
+        kill_text_rect.left = center_x + 5
+        kill_text_rect.centery = kill_icon_rect.centery
+        
+        # 渲染击杀统计文本和图标
+        self.screen.blit(self.kill_icon, kill_icon_rect)
+        self.screen.blit(kill_text, kill_text_rect)
+        
+        # 渲染金币数量和图标（右上角，紧贴经验条下方）
         coin_text = self.font.render(str(player.coins), True, self.coin_color)
         coin_text_rect = coin_text.get_rect()
         coin_icon_rect = self.coin_icon.get_rect()
@@ -145,7 +175,7 @@ class UI:
         # 计算金币文本和图标的位置
         coin_text_rect.right = screen_width - self.margin - coin_icon_rect.width - 5
         coin_text_rect.top = self.bar_height + self.margin
-        coin_icon_rect.left = coin_text_rect.right + 5
+        coin_icon_rect.right = coin_text_rect.left - 5
         coin_icon_rect.centery = coin_text_rect.centery
         
         # 渲染金币文本和图标

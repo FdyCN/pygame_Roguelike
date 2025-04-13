@@ -2,33 +2,41 @@ import pygame
 import math
 from ..resource_manager import resource_manager
 from abc import ABC, abstractmethod
+from .enemy_config import get_enemy_config
 
 class Enemy(pygame.sprite.Sprite, ABC):
-    def __init__(self, x, y, health, damage, speed, scale=2.0):
+    def __init__(self, x, y, enemy_type, difficulty="normal", level=1, scale=None):
         super().__init__()
         
-        # 敌人基本属性
-        self.type = None  # 子类需要设置具体类型
+        # 设置敌人类型
+        self.type = enemy_type
+        
+        # 从配置获取敌人属性
+        self.config = get_enemy_config(enemy_type, difficulty, level)
+        
+        # 设置基本属性
+        self.health = self.config["health"]
+        self.max_health = self.config["health"]
+        self.damage = self.config["damage"]
+        self.speed = self.config["speed"]
+        self.score_value = self.config["score_value"]
+        
+        # 设置缩放因子
+        self.scale = scale if scale is not None else self.config.get("scale", 2.0)
+        
+        # 动画相关
         self.animations = {}  # 子类需要设置具体动画
         self.current_animation = 'idle'
-        self.scale = scale  # 缩放因子
         
         # 设置敌人在世界坐标系中的位置
-        self.rect = pygame.Rect(x, y, 44 * scale, 30 * scale)  # 根据缩放调整碰撞箱大小
-        
-        # 敌人属性
-        self.health = health
-        self.max_health = health
-        self.damage = damage
-        self.speed = speed
-        self.score_value = 10  # 默认分数值，子类可以修改
+        self.rect = pygame.Rect(x, y, 44 * self.scale, 30 * self.scale)  # 根据缩放调整碰撞箱大小
         
         # 存活状态
         self._alive = True
         
         # 攻击冷却
         self.attack_cooldown = 0
-        self.attack_cooldown_time = 0.5  # 攻击冷却时间（秒）
+        self.attack_cooldown_time = self.config.get("attack_cooldown", 0.5)  # 攻击冷却时间（秒）
         self.has_damaged_player = False
         
         # 动画状态
@@ -48,10 +56,9 @@ class Enemy(pygame.sprite.Sprite, ABC):
         """加载敌人的动画，子类必须实现"""
         pass
         
-    @abstractmethod
     def attack(self, player, dt):
         """
-        抽象攻击方法，子类必须实现
+        敌人默认使用近战碰撞攻击
         
         Args:
             player: 攻击目标（玩家）
@@ -60,7 +67,7 @@ class Enemy(pygame.sprite.Sprite, ABC):
         Returns:
             bool: 攻击是否命中
         """
-        pass
+        return self.melee_attack(player) 
         
     def update(self, dt, player):
         # 更新无敌状态

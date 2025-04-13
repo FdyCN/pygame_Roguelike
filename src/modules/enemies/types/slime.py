@@ -6,22 +6,16 @@ import math
 class Slime(Enemy):
     """远程攻击敌人示例类"""
     
-    def __init__(self, x, y, scale=1.0):
-        # 基础属性
-        health = 200
-        damage = 15
-        speed = 80  # 较慢的移动速度
+    def __init__(self, x, y, enemy_type='slime', difficulty="normal", level=1, scale=None):
+        # 调用基类构造函数，传递敌人类型、难度和等级
+        super().__init__(x, y, enemy_type, difficulty, level, scale)
         
-        super().__init__(x, y, health, damage, speed, scale)
-        self.type = 'slime'
-        self.score_value = 150
-        
-        # 远程攻击相关属性
-        self.attack_range = 500  # 攻击距离
-        self.min_attack_range = 200  # 最小攻击距离，太近不会发射
+        # 从配置获取远程攻击相关属性
+        self.attack_range = self.config.get("attack_range", 800)        # 攻击距离
+        self.min_attack_range = self.config.get("min_attack_range", 300) # 最小攻击距离，太近不会发射
         self.attack_cooldown = 0
-        self.attack_cooldown_time = 2.0  # 攻击冷却时间（秒）
-        self.projectile_speed = 180
+        self.attack_cooldown_time = self.config.get("attack_cooldown", 2.0)  # 攻击冷却时间（秒）
+        self.projectile_speed = self.config.get("projectile_speed", 180)
         self.projectiles = pygame.sprite.Group()  # 存储投射物
         
         # 加载动画
@@ -37,8 +31,10 @@ class Slime(Enemy):
         
     def load_animations(self):
         """加载远程敌人的动画"""
-        # 这里应该加载实际的远程敌人动画
-        # 以下仅为示例，使用已有的资源作为占位符
+        # 获取配置中的动画速度
+        animation_speed = self.config.get("animation_speed", 0.0333)
+        
+        # 加载精灵表
         idle_spritesheet = resource_manager.load_spritesheet(
             'slime_idle_spritesheet', 'images/enemy/Slime_Idle_44x30.png')
         walk_spritesheet = resource_manager.load_spritesheet(
@@ -52,19 +48,19 @@ class Slime(Enemy):
                 'ranger_idle', idle_spritesheet,
                 frame_width=44, frame_height=30,
                 frame_count=10, row=0,
-                frame_duration=0.0333  # 30 FPS
+                frame_duration=animation_speed
             ),
             'walk': resource_manager.create_animation(
                 'ranger_walk', walk_spritesheet,
                 frame_width=44, frame_height=30,
                 frame_count=10, row=0,
-                frame_duration=0.0333  # 30 FPS
+                frame_duration=animation_speed
             ),
             'hurt': resource_manager.create_animation(
                 'ranger_hurt', hurt_spritesheet,
                 frame_width=44, frame_height=30,
                 frame_count=10, row=0,
-                frame_duration=0.0333  # 30 FPS
+                frame_duration=animation_speed
             )
         }
         

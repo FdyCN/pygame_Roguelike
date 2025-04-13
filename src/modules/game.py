@@ -50,7 +50,7 @@ class Game:
         
         # 游戏状态
         self.game_time = 0
-        self.score = 0
+        self.kill_num = 0 # 击杀数
         self.level = 1
         
     def start_new_game(self):
@@ -64,11 +64,12 @@ class Game:
         
         # 初始化游戏管理器
         self.enemy_manager = EnemyManager()
+        self.enemy_manager.set_difficulty("normal")  # 设置初始难度
         self.item_manager = ItemManager()
         
         # 重置游戏状态
         self.game_time = 0
-        self.score = 0
+        self.kill_num = 0
         self.level = 1
         
         # 重置相机位置
@@ -189,8 +190,12 @@ class Game:
             # 恢复游戏状态
             game_data = save_data.get('game_data', {})
             self.game_time = game_data.get('game_time', 0)
-            self.score = game_data.get('score', 0)
+            self.kill_num = game_data.get('kill_num', 0)
             self.level = game_data.get('level', 1)
+            
+            # 设置敌人管理器的难度和等级
+            self.enemy_manager.difficulty_level = self.level
+            self.enemy_manager.set_difficulty(game_data.get('difficulty', 'normal'))
             
             # 恢复敌人状态
             enemies_data = save_data.get('enemies_data', [])
@@ -442,7 +447,7 @@ class Game:
         self.player.render_weapons(self.screen, self.camera_x, self.camera_y)
         # 渲染UI
         if self.player:
-            self.ui.render(self.player, self.game_time)
+            self.ui.render(self.player, self.game_time, self.kill_num)
             
         # 如果游戏暂停，渲染暂停菜单
         if self.paused:
@@ -496,7 +501,7 @@ class Game:
                         resource_manager.play_sound("hit")
                         
                         if enemy.health <= 0:
-                            self.score += enemy.score_value
+                            self.score += 1
                             # 在敌人死亡位置生成物品，传递player对象以应用幸运值加成
                             self.item_manager.spawn_item(enemy.rect.x, enemy.rect.y, enemy.type, self.player)
                             self.enemy_manager.remove_enemy(enemy)
@@ -525,4 +530,4 @@ class Game:
             
         # 更新等级和难度
         self.level = current_level
-        self.enemy_manager.difficulty = self.level 
+        self.enemy_manager.difficulty_level = self.level  # 更新敌人管理器中的难度等级 
