@@ -279,9 +279,7 @@ class Fireball(Weapon):
             self.cast_fireballs(enemies)
         
         # 更新所有火球和处理碰撞
-        for fireball in list(self.projectiles):
-            # 移除自定义碰撞检测逻辑，统一由Game._check_collisions处理
-            fireball.update(dt)
+        self.projectiles.update(dt)
         
         # 更新爆炸特效
         self.effects.update(dt)

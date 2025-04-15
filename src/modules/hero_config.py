@@ -40,7 +40,7 @@ DEFAULT_HERO_CONFIG = {
         "attack_power": 1.0,
         "luck": 1.0
     },
-    "starting_weapon": "fireball",
+    "starting_weapon": "frost_nova",
     "unlock_condition": None  # 默认解锁
 }
 
