@@ -3,9 +3,9 @@
 提供简单的工厂方法来创建武器实例
 """
 
-from .knife import Knife
-from .fireball import Fireball
-from .frost_nova import FrostNova
+from .types.knife import Knife
+from .types.fireball import Fireball
+from .types.frost_nova import FrostNova
 from .weapons_data import get_weapon_config
 
 # 武器类映射

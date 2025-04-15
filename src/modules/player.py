@@ -1,9 +1,9 @@
 import pygame
 import math
 from .resource_manager import resource_manager
-from .weapons.knife import Knife
-from .weapons.fireball import Fireball
-from .weapons.frost_nova import FrostNova
+from .weapons.types.knife import Knife
+from .weapons.types.fireball import Fireball
+from .weapons.types.frost_nova import FrostNova
 from .upgrade_system import UpgradeType, WeaponUpgradeLevel, PassiveUpgradeLevel
 from .hero_config import get_hero_config
 from .components.components import (

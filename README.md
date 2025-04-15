@@ -88,11 +88,6 @@ python src/main.py
 - 玩玩看就知道了
 
 ## 待实现功能
-- [x] 【优先】重构Player，进一步拆分模块
-- [x] 【优先】重构武器系统，减少硬编码，提升扩展性
-- [x] 【优先】重构敌人系统，提升多样性
-- [ ] 【优先】重构游戏状态，提升统一管理的便利性
-
 - [ ] 重构存档系统，感觉没必要支持存档（这个类型的游戏，没有开不同存档分支的必要）
 - [ ] 添加更多武器类型
   - [x] 添加了火球术、冰霜新星的代码
@@ -102,21 +97,20 @@ python src/main.py
   - [x] 经验槽与经验值计算
   - [x] 与升级界面联动 
   - [x] 添加被动升级：攻击力、防御力、速度、生命恢复、幸运、拾取半径。
-- [x] 添加升级选择界面
-  - [x] 支持随机升级三选一
-  - [x] 升级选项实现 
-- [ ] 添加音效和背景音乐
-- [ ] 添加更多敌人类型
-  - [x] 添加Ghost\Radish\Bat三种敌人，其中Bat属于小boss类型
+- [ ] 添加系统素材
+  - [ ] 添加音效
+  - [ ] 添加地图
+- [ ] 敌人系统扩展，攻击方式和debuff判定等
+  - [x] 添加Ghost\Radish\Bat\Slime三种敌人，其中Bat属于小boss类型，Slime属于远程攻击敌人
   - [ ] 优化敌人生成数量、时间等策略 
   - [ ] 增加敌人的debuff效果，如：减速、击退等
-- [x] 实现物品掉落系统
-  - [x] 金币掉落
-  - [x] 经验球掉落
-  - [x] 医疗包掉落
-  - [ ] 宝箱掉落
-- [ ] 主菜单
-  - [x] 支持保存游戏和读取游戏
+- [x] 优化物品掉落系统
+  - [ ] 宝箱掉落与抽奖逻辑
+  - [ ] 不同的经验球类型
+  - [ ] 随机生成可击破的道具
+- [ ] 交互菜单
+  - [x] 主菜单、暂停菜单支持保存游戏和读取游戏
+  - [ ] 开始新游戏，支持英雄选择、难易度选择
   - [ ] 支持设置
   - [ ] 支持全局的技能属性
 
@@ -124,3 +118,5 @@ python src/main.py
 素材：
 - Ninja_Frog\Ghost\Bat\Radish 来自：[pixel-adventure](https://pixelfrog-assets.itch.io/pixel-adventure-1)
 - weapons\passives image 来自：[raven-fantasy-icons](https://clockworkraven.itch.io/raven-fantasy-icons)
+- chest image 来自：[Assorted RPG Icons ](https://merchant-shade.itch.io/16x16-mixed-rpg-icons)
+- explotion 来自：[Pixel Effect RPG Part](https://bdragon1727.itch.io/64x64-pixel-effect-rpg-part-1)

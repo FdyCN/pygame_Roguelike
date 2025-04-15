@@ -1,9 +1,9 @@
 import pygame
 import math
-from ..resource_manager import resource_manager
-from .weapon import Weapon
-from .weapon_stats import WeaponStatType, WeaponStatsDict
-from .weapons_data import get_weapon_base_stats
+from ...resource_manager import resource_manager
+from ..weapon import Weapon
+from ..weapon_stats import WeaponStatType, WeaponStatsDict
+from ..weapons_data import get_weapon_base_stats
 
 class ThrownKnife(pygame.sprite.Sprite):
     """飞刀投射物类"""

@@ -2,10 +2,10 @@ import unittest
 import pygame
 import math
 from src.modules.player import Player
-from src.modules.weapons.knife import Knife, ThrownKnife
-from src.modules.weapons.fireball import Fireball, FireballProjectile
+from src.modules.weapons.types.knife import Knife, ThrownKnife
+from src.modules.weapons.types.fireball import Fireball, FireballProjectile
 from src.modules.enemies.enemy import Enemy
-from src.modules.weapons.frost_nova import FrostNova, FrostNovaProjectile
+from src.modules.weapons.types.frost_nova import FrostNova, FrostNovaProjectile
 from src.modules.enemies.types import Ghost
 from src.modules.weapons.weapon_stats import WeaponStatType
 from src.modules.weapons.weapons_data import get_weapon_config, get_weapon_base_stats
