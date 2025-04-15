@@ -45,13 +45,14 @@ class Weapon(pygame.sprite.Sprite):
         """获取武器的投射物列表，如果没有则返回空列表"""
         return self.projectiles if hasattr(self, 'projectiles') else pygame.sprite.Group()
         
-    def handle_collision(self, projectile, enemy):
+    def handle_collision(self, projectile, enemy, enemies=None):
         """处理武器投射物与敌人的碰撞
         
         Args:
             projectile: 武器的投射物
             enemy: 被击中的敌人
-            
+            enemies: 游戏中的所有敌人列表
+
         Returns:
             bool: 是否应该销毁投射物
         """
@@ -60,6 +61,12 @@ class Weapon(pygame.sprite.Sprite):
             # 敌人处于无敌状态，不计算新的碰撞
             return False
             
+        # 检查投射物是否有特殊的碰撞处理方法（如火球的爆炸）
+        if hasattr(projectile, 'on_collision'):
+            # 调用投射物自己的碰撞处理方法
+            return projectile.on_collision(enemy, enemies)
+            
+        # 默认碰撞处理逻辑
         # 造成伤害
         enemy.take_damage(projectile.damage)
         

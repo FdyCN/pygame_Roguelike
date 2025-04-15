@@ -16,7 +16,7 @@ WEAPONS_CONFIG = {
             {
                 'level': 1,
                 'effects': {
-                    WeaponStatType.DAMAGE: 20,
+                    WeaponStatType.DAMAGE: 200,
                     WeaponStatType.ATTACK_SPEED: 1.0,
                     WeaponStatType.PROJECTILE_SPEED: 400,
                     WeaponStatType.CAN_PENETRATE: False,
@@ -65,7 +65,7 @@ WEAPONS_CONFIG = {
                 'level': 1,
                 'effects': {
                     WeaponStatType.DAMAGE: 25,
-                    WeaponStatType.EXPLOSION_RADIUS: 30,
+                    WeaponStatType.EXPLOSION_RADIUS: 60,
                     WeaponStatType.BURN_DURATION: 3,
                     WeaponStatType.BURN_DAMAGE: 5,
                     WeaponStatType.COOLDOWN: 1.5
@@ -76,7 +76,7 @@ WEAPONS_CONFIG = {
                 'level': 2,
                 'effects': {
                     WeaponStatType.DAMAGE: 25,
-                    WeaponStatType.EXPLOSION_RADIUS: 40,
+                    WeaponStatType.EXPLOSION_RADIUS: 70,
                     WeaponStatType.BURN_DURATION: 4,
                     WeaponStatType.BURN_DAMAGE: 8,
                     WeaponStatType.COOLDOWN: 1.5
@@ -87,7 +87,7 @@ WEAPONS_CONFIG = {
                 'level': 3,
                 'effects': {
                     WeaponStatType.DAMAGE: 35,
-                    WeaponStatType.EXPLOSION_RADIUS: 40,
+                    WeaponStatType.EXPLOSION_RADIUS: 80,
                     WeaponStatType.BURN_DURATION: 5,
                     WeaponStatType.BURN_DAMAGE: 10,
                     WeaponStatType.COOLDOWN: 1.2
@@ -105,7 +105,7 @@ WEAPONS_CONFIG = {
                 'level': 1,
                 'effects': {
                     WeaponStatType.DAMAGE: 25,
-                    WeaponStatType.EXPLOSION_RADIUS: 30,
+                    WeaponStatType.EXPLOSION_RADIUS: 60,
                     WeaponStatType.FREEZE_DURATION: 3,
                     WeaponStatType.SLOW_PERCENT: 50,
                     WeaponStatType.COOLDOWN: 1.5
@@ -116,7 +116,7 @@ WEAPONS_CONFIG = {
                 'level': 2,
                 'effects': {
                     WeaponStatType.DAMAGE: 25,
-                    WeaponStatType.EXPLOSION_RADIUS: 40,
+                    WeaponStatType.EXPLOSION_RADIUS: 70,
                     WeaponStatType.FREEZE_DURATION: 4,
                     WeaponStatType.SLOW_PERCENT: 50,
                     WeaponStatType.COOLDOWN: 1.5
@@ -127,7 +127,7 @@ WEAPONS_CONFIG = {
                 'level': 3,
                 'effects': {
                     WeaponStatType.DAMAGE: 35,
-                    WeaponStatType.EXPLOSION_RADIUS: 40,
+                    WeaponStatType.EXPLOSION_RADIUS: 80,
                     WeaponStatType.FREEZE_DURATION: 5,
                     WeaponStatType.SLOW_PERCENT: 50,
                     WeaponStatType.COOLDOWN: 1.2

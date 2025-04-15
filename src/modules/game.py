@@ -496,7 +496,7 @@ class Game:
                     
                     if distance < enemy.rect.width / 2 + projectile.rect.width / 2:
                         # 处理碰撞
-                        should_destroy = weapon.handle_collision(projectile, enemy)
+                        should_destroy = weapon.handle_collision(projectile, enemy, self.enemy_manager.enemies)
                         # 播放击中音效
                         resource_manager.play_sound("hit")
                         
