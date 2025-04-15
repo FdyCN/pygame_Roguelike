@@ -16,7 +16,7 @@ WEAPONS_CONFIG = {
             {
                 'level': 1,
                 'effects': {
-                    WeaponStatType.DAMAGE: 20,
+                    WeaponStatType.DAMAGE: 200,
                     WeaponStatType.ATTACK_SPEED: 1.0,
                     WeaponStatType.PROJECTILE_SPEED: 400,
                     WeaponStatType.CAN_PENETRATE: False,

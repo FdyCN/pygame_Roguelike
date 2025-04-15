@@ -278,6 +278,7 @@ class ResourceManager:
     def create_animation(self, name: str, spritesheet: SpriteSheet, 
                         frame_width: int, frame_height: int, 
                         frame_count: int, row: int = 0,
+                        col: int = 0,
                         frame_duration: float = 0.1, loop: bool = True) -> Animation:
         """从精灵表创建动画
         
@@ -288,6 +289,7 @@ class ResourceManager:
             frame_height: 每帧高度
             frame_count: 帧数量
             row: 精灵表中的行号(从0开始)
+            col: 精灵表中的起始列号(从0开始)
             frame_duration: 每帧持续时间
             loop: 是否循环播放
             
@@ -296,7 +298,7 @@ class ResourceManager:
         """
         frames = []
         for i in range(frame_count):
-            frame = spritesheet.get_sprite(i * frame_width, row * frame_height, 
+            frame = spritesheet.get_sprite((col + i) * frame_width, row * frame_height, 
                                          frame_width, frame_height)
             frames.append(frame)
         

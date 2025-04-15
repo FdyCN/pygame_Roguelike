@@ -32,9 +32,20 @@ class Item(pygame.sprite.Sprite):
                                                          frame_count=1, row=0,
                                                          frame_duration=0.1).get_current_frame()
             self.value = 20  # 恢复血量
+        # 杀boss掉落，开宝箱抽奖(武器、被动升级卡片，组合超武升级只能通过宝箱)
+        elif item_type == 'chest':
+            spritesheet = resource_manager.load_spritesheet('chest_spritesheet', 'images/items/chests_bundled_16x16.png')
+            self.image = resource_manager.create_animation('chest', spritesheet,
+                                                         frame_width=16, frame_height=16, 
+                                                         frame_count=1, row=0, col=6,
+                                                         frame_duration=0.1).get_current_frame()
+
 
         # 缩放图片到合适大小
-        self.image = pygame.transform.scale(self.image, (16, 16))  # 将物品图片缩放为16x16像素
+        if item_type == 'chest':
+            self.image = pygame.transform.scale(self.image, (24, 24))  # 将物品图片缩放为24x24像素
+        else:
+            self.image = pygame.transform.scale(self.image, (16, 16))  # 将物品图片缩放为16x16像素
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
         
@@ -72,8 +83,10 @@ class Item(pygame.sprite.Sprite):
             player.add_coins(self.value)
         elif self.item_type == 'health':
             player.heal(self.value)
+        elif self.item_type == 'chest':
+            # TODO: 宝箱掉落物品,随机掉落武器、被动升级卡片、组合超武升级
+            pass
 
-            
     def render(self, screen, camera_x, camera_y, screen_center_x, screen_center_y):
         if self.collected:
             return

@@ -501,7 +501,7 @@ class Game:
                         resource_manager.play_sound("hit")
                         
                         if enemy.health <= 0:
-                            self.score += 1
+                            self.kill_num += 1
                             # 在敌人死亡位置生成物品，传递player对象以应用幸运值加成
                             self.item_manager.spawn_item(enemy.rect.x, enemy.rect.y, enemy.type, self.player)
                             self.enemy_manager.remove_enemy(enemy)
