@@ -42,7 +42,7 @@ game_python/
 pip install -r requirements.txt
 ```
 3. cursor版本：0.47.8
-4. LLM: claude-3.5-sonnet （实测过程中不建议切换LLM来做代码生成，可能会导致代码风格差异比较大）
+4. LLM: claude-3.7-sonnet
 
 ## 运行
 
