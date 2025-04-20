@@ -1,6 +1,7 @@
 import pygame
 import math
 from ..resource_manager import resource_manager
+from ..utils import create_outlined_sprite
 from abc import ABC, abstractmethod
 from .enemy_config import get_enemy_config
 
@@ -51,10 +52,134 @@ class Enemy(pygame.sprite.Sprite, ABC):
         self.invincible_timer = 0
         self.invincible_duration = 0.15  # 受伤后的无敌时间（秒）
         
+        # 状态效果系统
+        self.status_effects = {}  # 格式: {'burn': {...}, 'slow': {...}}
+        self.original_speed = self.speed  # 保存原始速度值
+        
+        # 特效相关
+        self.burn_flash_timer = 0.0  # 燃烧闪烁计时器
+        self.burn_flash_duration = 0.15  # 燃烧闪烁持续时间
+        
+        # 轮廓相关
+        self.show_outline = False
+        self.outline_color = (0, 255, 0)  # 默认绿色轮廓
+        self.outline_thickness = 1
+        
+        # 创建遮罩
+        self.mask = None
+        
     @abstractmethod
     def load_animations(self):
         """加载敌人的动画，子类必须实现"""
         pass
+        
+    def apply_burn_effect(self, damage_per_second, duration):
+        """
+        应用燃烧效果，导致敌人持续受到伤害
+        
+        Args:
+            damage_per_second: 每秒造成的伤害值
+            duration: 效果持续时间（秒）
+        """
+        # 如果已有燃烧效果，延长持续时间而不是重置
+        if 'burn' in self.status_effects:
+            self.status_effects['burn']['duration'] = max(
+                self.status_effects['burn']['duration'],
+                duration
+            )
+            # 更新伤害值为较高者
+            self.status_effects['burn']['damage_per_sec'] = max(
+                self.status_effects['burn']['damage_per_sec'],
+                damage_per_second
+            )
+        else:
+            self.status_effects['burn'] = {
+                'duration': duration,
+                'damage_per_sec': damage_per_second,
+                'timer': 0.0,  # 用于计时何时造成伤害
+                'total_timer': 0.0  # 总计时器
+            }
+            
+    def apply_slow_effect(self, slow_percent, duration):
+        """
+        应用减速效果，降低敌人移动速度
+        
+        Args:
+            slow_percent: 减速百分比（0.0-1.0）
+            duration: 效果持续时间（秒）
+        """
+        # 如果已有减速效果，选择较强的减速效果和较长的持续时间
+        if 'slow' in self.status_effects:
+            self.status_effects['slow']['duration'] = max(
+                self.status_effects['slow']['duration'],
+                duration
+            )
+            if slow_percent > self.status_effects['slow']['slow_percent']:
+                self.status_effects['slow']['slow_percent'] = slow_percent
+                # 更新减速值
+                self.speed = self.original_speed * (1 - slow_percent)
+        else:
+            # 只有在未减速状态才保存原始速度
+            self.original_speed = self.speed
+            
+            self.status_effects['slow'] = {
+                'duration': duration,
+                'slow_percent': slow_percent,
+                'timer': 0.0  # 总计时器
+            }
+            # 立即应用减速
+            self.speed = self.original_speed * (1 - slow_percent)
+            
+    def update_status_effects(self, dt):
+        """
+        更新所有状态效果
+        
+        Args:
+            dt: 时间增量（秒）
+        """
+        # 更新燃烧闪烁计时器
+        if self.burn_flash_timer > 0:
+            self.burn_flash_timer -= dt
+            if self.burn_flash_timer <= 0:
+                self.burn_flash_timer = 0
+        
+        # 处理燃烧效果
+        if 'burn' in self.status_effects:
+            effect = self.status_effects['burn']
+            effect['total_timer'] += dt
+            effect['timer'] += dt
+            
+            # 每0.5秒造成一次伤害
+            if effect['timer'] >= 0.5:
+                damage = effect['damage_per_sec'] * 0.5
+                self.health -= damage  # 直接扣除生命值，不触发无敌状态
+                effect['timer'] = 0.0
+                
+                # 触发燃烧闪烁效果
+                self.burn_flash_timer = self.burn_flash_duration
+                
+                # 检查敌人是否死亡
+                if self.health <= 0:
+                    # 标记敌人为死亡状态
+                    self._alive = False
+                    # 播放死亡音效
+                    resource_manager.play_sound("enemy_death")
+                    # 注意：实际移除敌人的操作是在EnemyManager中进行的
+                
+            # 检查是否结束
+            if effect['total_timer'] >= effect['duration']:
+                del self.status_effects['burn']
+        
+        # 处理减速效果
+        if 'slow' in self.status_effects:
+            effect = self.status_effects['slow']
+            effect['timer'] += dt
+            
+            # 检查是否结束
+            if effect['timer'] >= effect['duration']:
+                # 恢复速度
+                self.speed = self.original_speed
+                del self.status_effects['slow']
         
     def attack(self, player, dt):
         """
@@ -70,6 +195,9 @@ class Enemy(pygame.sprite.Sprite, ABC):
         return self.melee_attack(player) 
         
     def update(self, dt, player):
+        # 更新状态效果
+        self.update_status_effects(dt)
+        
         # 更新无敌状态
         if self.invincible:
             self.invincible_timer -= dt
@@ -132,15 +260,81 @@ class Enemy(pygame.sprite.Sprite, ABC):
             new_size = (int(original_size[0] * self.scale), int(original_size[1] * self.scale))
             current_frame = pygame.transform.scale(current_frame, new_size)
             
-        # 总是翻转当前帧
-        current_frame = pygame.transform.flip(current_frame, True, False)
-        
-        # 根据朝向再次翻转图像
-        if not self.facing_right:
+            # 总是翻转当前帧
             current_frame = pygame.transform.flip(current_frame, True, False)
             
-        self.image = current_frame
+            # 根据朝向再次翻转图像
+            if not self.facing_right:
+                current_frame = pygame.transform.flip(current_frame, True, False)
             
+            # 应用状态效果的视觉变化
+            modified_frame = current_frame.copy()
+            
+            # 创建遮罩以获取实际边缘和区域
+            mask = pygame.mask.from_surface(current_frame)
+            mask_outline = mask.outline()
+            
+            # 如果有减速效果
+            if 'slow' in self.status_effects:
+                # 创建与原图大小相同的透明表面
+                slow_effect = pygame.Surface(modified_frame.get_size(), pygame.SRCALPHA)
+                
+                # 为边缘添加蓝色光晕
+                if mask_outline:
+                    for point in mask_outline:
+                        # 绘制蓝色光晕点
+                        pygame.draw.circle(slow_effect, (0, 0, 200, 100), point, 3)
+                
+                # 为实际区域添加淡蓝色
+                mask_surface = mask.to_surface(setcolor=(0, 0, 100, 70), unsetcolor=(0, 0, 0, 0))
+                slow_effect.blit(mask_surface, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
+                
+                # 叠加到原图
+                modified_frame.blit(slow_effect, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
+            
+            # 如果有燃烧闪烁效果
+            if self.burn_flash_timer > 0:
+                # 创建与原图大小相同的透明表面
+                fire_effect = pygame.Surface(modified_frame.get_size(), pygame.SRCALPHA)
+                
+                # 为边缘添加红色光晕
+                if mask_outline:
+                    for point in mask_outline:
+                        # 绘制红色/橙色光晕点
+                        pygame.draw.circle(fire_effect, (255, 100, 0, 150), point, 3)
+                
+                # 为实际区域添加淡红色
+                mask_surface = mask.to_surface(setcolor=(50, 0, 0, 50), unsetcolor=(0, 0, 0, 0))
+                fire_effect.blit(mask_surface, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
+                
+                # 叠加到原图
+                modified_frame.blit(fire_effect, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
+            
+            self.image = modified_frame
+            
+            # 更新遮罩
+            self.mask = pygame.mask.from_surface(self.image)
+            
+    def toggle_outline(self, show=None, color=None, thickness=None):
+        """
+        切换是否显示轮廓
+        
+        Args:
+            show: 是否显示轮廓，None表示切换当前状态
+            color: 轮廓颜色，None表示使用当前颜色
+            thickness: 轮廓粗细，None表示使用当前粗细
+        """
+        if show is not None:
+            self.show_outline = show
+        else:
+            self.show_outline = not self.show_outline
+            
+        if color is not None:
+            self.outline_color = color
+            
+        if thickness is not None:
+            self.outline_thickness = thickness
+    
     def render(self, screen, screen_x, screen_y):
         # 创建一个临时的rect用于绘制
         draw_rect = self.rect.copy()
@@ -149,7 +343,16 @@ class Enemy(pygame.sprite.Sprite, ABC):
         
         # 绘制敌人
         if hasattr(self, 'image'):
-            screen.blit(self.image, draw_rect)
+            if self.show_outline:
+                # 创建带轮廓的图像
+                outlined_image = create_outlined_sprite(
+                    self,
+                    outline_color=self.outline_color,
+                    outline_thickness=self.outline_thickness
+                )
+                screen.blit(outlined_image, draw_rect)
+            else:
+                screen.blit(self.image, draw_rect)
         
         # 绘制血条
         health_bar_width = 32 * self.scale

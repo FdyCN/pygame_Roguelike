@@ -76,6 +76,15 @@ class EnemyManager:
         for enemy in self.enemies[:]:  # 使用切片创建副本以避免在迭代时修改列表
             enemy.update(dt, player)
             
+            # 检查敌人是否已死亡（包括被燃烧伤害杀死的）
+            if not enemy.alive():
+                try:
+                    self.enemies.remove(enemy)
+                    # 注意：在这里我们不再播放死亡音效，因为在enemy.py中已经播放
+                except ValueError:
+                    # 如果敌人已经被移除，忽略错误
+                    pass
+            
     def render(self, screen, camera_x, camera_y, screen_center_x, screen_center_y):
         for enemy in self.enemies:
             # 计算敌人在屏幕上的位置

@@ -6,6 +6,7 @@ from .weapons.types.fireball import Fireball
 from .weapons.types.frost_nova import FrostNova
 from .upgrade_system import UpgradeType, WeaponUpgradeLevel, PassiveUpgradeLevel
 from .hero_config import get_hero_config
+from .utils import create_outlined_sprite
 from .components.components import (
     MovementComponent,
     AnimationComponent,
@@ -34,6 +35,15 @@ class Player(pygame.sprite.Sprite):
         self.image = self.animation.get_current_frame()
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
+        
+        # 创建遮罩
+        self.mask = None
+        self.update_mask()
+        
+        # 轮廓相关
+        self.show_outline = False
+        self.outline_color = (255, 0, 0)  # 默认红色轮廓
+        self.outline_thickness = 1
         
         # 添加初始武器
         starting_weapon = self.hero_config.get("starting_weapon", "knife")
@@ -191,10 +201,46 @@ class Player(pygame.sprite.Sprite):
         # 更新当前图像
         self.image = self.animation.get_current_frame(not self.movement.facing_right)
         
+        # 更新遮罩
+        self.update_mask()
+        
+    def update_mask(self):
+        """更新精灵遮罩"""
+        self.mask = pygame.mask.from_surface(self.image)
+        
+    def toggle_outline(self, show=None, color=None, thickness=None):
+        """
+        切换是否显示轮廓
+        
+        Args:
+            show: 是否显示轮廓，None表示切换当前状态
+            color: 轮廓颜色，None表示使用当前颜色
+            thickness: 轮廓粗细，None表示使用当前粗细
+        """
+        if show is not None:
+            self.show_outline = show
+        else:
+            self.show_outline = not self.show_outline
+            
+        if color is not None:
+            self.outline_color = color
+            
+        if thickness is not None:
+            self.outline_thickness = thickness
+        
     def render(self, screen):
         """渲染玩家"""
         if not self.health_component.invincible or self.animation.visible:
-            screen.blit(self.image, self.rect)
+            if self.show_outline:
+                # 创建带轮廓的图像
+                outlined_image = create_outlined_sprite(
+                    self,
+                    outline_color=self.outline_color,
+                    outline_thickness=self.outline_thickness
+                )
+                screen.blit(outlined_image, self.rect)
+            else:
+                screen.blit(self.image, self.rect)
             
     def _update_animation_state(self):
         """更新动画状态"""

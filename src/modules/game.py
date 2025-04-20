@@ -9,6 +9,7 @@ from .menus.save_menu import SaveMenu
 from .save_system import SaveSystem
 from .resource_manager import resource_manager
 from .upgrade_system import UpgradeManager, WeaponUpgradeLevel, PassiveUpgradeLevel
+from .utils import apply_mask_collision
 
 class Game:
     def __init__(self, screen):
@@ -319,9 +320,19 @@ class Game:
             return True
             
         # ESC键暂停游戏
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-            self.toggle_pause()
-            return True
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                self.toggle_pause()
+                return True
+            elif event.key == pygame.K_F2:
+                # 切换显示轮廓
+                # TODO: 显示轮廓的逻辑放到全局的'设置'菜单中进行
+                if self.player:
+                    self.player.toggle_outline()
+                    # 切换敌人的轮廓
+                    for enemy in self.enemy_manager.enemies:
+                        enemy.toggle_outline()
+                return True
             
         # 处理玩家输入
         if self.player:
@@ -401,6 +412,14 @@ class Game:
         # 更新相机位置（跟随玩家）
         self.camera_x = self.player.world_x
         self.camera_y = self.player.world_y
+        
+        # 处理被状态效果（如燃烧）导致死亡的敌人
+        for enemy in list(self.enemy_manager.enemies):  # 使用列表复制避免在迭代时修改
+            if enemy in self.enemy_manager.enemies and not enemy.alive():
+                self.kill_num += 1
+                # 在敌人死亡位置生成物品，传递player对象以应用幸运值加成
+                self.item_manager.spawn_item(enemy.rect.x, enemy.rect.y, enemy.type, self.player)
+                # 敌人已经在enemy_manager.update()中被移除，无需再次移除
         
         # 更新其他游戏对象
         self.enemy_manager.update(dt, self.player)
@@ -489,35 +508,51 @@ class Game:
         for weapon in self.player.weapons:
             for projectile in weapon.get_projectiles():
                 for enemy in self.enemy_manager.enemies:
+                    # 首先使用矩形做快速检测
                     # 计算世界坐标系中的距离
                     dx = enemy.rect.x - projectile.world_x
                     dy = enemy.rect.y - projectile.world_y
                     distance = (dx**2 + dy**2)**0.5
                     
                     if distance < enemy.rect.width / 2 + projectile.rect.width / 2:
-                        # 处理碰撞
-                        should_destroy = weapon.handle_collision(projectile, enemy, self.enemy_manager.enemies)
-                        # 播放击中音效
-                        resource_manager.play_sound("hit")
+                        # 进行更精确的像素级碰撞检测
+                        # 调整projectile的rect以匹配world坐标
+                        projectile_rect = projectile.rect.copy()
+                        projectile_rect.centerx = projectile.world_x
+                        projectile_rect.centery = projectile.world_y
                         
-                        if enemy.health <= 0:
-                            self.kill_num += 1
-                            # 在敌人死亡位置生成物品，传递player对象以应用幸运值加成
-                            self.item_manager.spawn_item(enemy.rect.x, enemy.rect.y, enemy.type, self.player)
-                            self.enemy_manager.remove_enemy(enemy)
-                            # 播放敌人死亡音效
-                            resource_manager.play_sound("enemy_death")
+                        if apply_mask_collision(enemy, projectile):
+                            # 处理碰撞
+                            should_destroy = weapon.handle_collision(projectile, enemy, self.enemy_manager.enemies)
+                            # 播放击中音效
+                            resource_manager.play_sound("hit")
                             
-                        if should_destroy:
-                            projectile.kill()
+                            if enemy.health <= 0:
+                                self.kill_num += 1
+                                # 在敌人死亡位置生成物品，传递player对象以应用幸运值加成
+                                self.item_manager.spawn_item(enemy.rect.x, enemy.rect.y, enemy.type, self.player)
+                                self.enemy_manager.remove_enemy(enemy)
+                                # 播放敌人死亡音效
+                                resource_manager.play_sound("enemy_death")
+                                
+                            if should_destroy:
+                                projectile.kill()
                             
         # 检测玩家和敌人的碰撞
         for enemy in self.enemy_manager.enemies:
             if not self.player.invincible:  # 只在玩家不处于无敌状态时检测碰撞
-                if enemy.attack_player(self.player):
-                    # 播放受伤音效
-                    resource_manager.play_sound("player_hurt")
-                    break  # 一次只处理一个碰撞
+                # 首先进行矩形快速检测
+                player_rect = self.player.rect.copy()
+                player_rect.centerx = self.player.world_x
+                player_rect.centery = self.player.world_y
+                
+                if player_rect.colliderect(enemy.rect):
+                    # 进行像素级碰撞检测
+                    if apply_mask_collision(self.player, enemy):
+                        if enemy.attack_player(self.player):
+                            # 播放受伤音效
+                            resource_manager.play_sound("player_hurt")
+                            break  # 一次只处理一个碰撞
         
     def _update_game_state(self):
         # 获取当前等级

@@ -267,8 +267,8 @@ class FrostNovaProjectile(pygame.sprite.Sprite):
                     enemy.take_damage(actual_damage)
                     
                     # 应用减速效果 - 所有被爆炸影响的敌人都会被减速
-                    # TODO: 在enemy对象中实现debuff
-                    # self.apply_slow_effect(enemy)
+                    if hasattr(enemy, 'apply_slow_effect'):
+                        enemy.apply_slow_effect(self.slow_amount, self.slow_duration)
         
         # 播放爆炸音效
         try:

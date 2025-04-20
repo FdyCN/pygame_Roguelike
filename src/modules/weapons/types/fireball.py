@@ -195,9 +195,7 @@ class FireballProjectile(pygame.sprite.Sprite):
                     
                     # 应用燃烧效果
                     if hasattr(enemy, 'apply_burn_effect') and self.burn_duration > 0:
-                        pass
-                        # TODO: 实现燃烧效果
-                        #  enemy.apply_burn_effect(self.burn_damage, self.burn_duration)
+                        enemy.apply_burn_effect(self.burn_damage, self.burn_duration)
         
         # 播放爆炸音效（使用try-except块处理可能不存在的音效）
         try:
