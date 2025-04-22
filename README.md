@@ -2,7 +2,7 @@
 
 这是一个使用 Cursor + Pygame 开发的2D像素风肉鸽游戏。边玩边学。
 
-**（50% cursor聊天与生成 + 15% debug + 15% codereview + 10% 找素材 + 4% 开开脑洞 + 4% 等待时玩手机 + 1% 写一些没有意义的README）**
+**（35% cursor聊天与生成 + 15% 游戏策划与需求分析 + 15% debug + 15% codereview + 10% 找素材 + 4% 开开脑洞 + 4% 等待时玩手机 + 1% 写一些没有意义的README）**
 
 ## 项目结构
 
@@ -42,7 +42,7 @@ game_python/
 pip install -r requirements.txt
 ```
 3. cursor版本：0.47.8
-4. LLM: claude-3.5-sonnet （实测过程中不建议切换LLM来做代码生成，可能会导致代码风格差异比较大）
+4. LLM: claude-3.7-sonnet
 
 ## 运行
 
@@ -59,8 +59,8 @@ python src/main.py
 
 ## 游戏特性
 
-- 多种敌人类型（幽灵、萝卜、蝙蝠）
-- 武器系统（飞刀）
+- 多种敌人类型（幽灵、萝卜、蝙蝠、史莱姆）
+- 武器系统（飞刀、火球、冰霜新星）
 - 升级系统
 - 存档系统
 - 物品掉落系统
