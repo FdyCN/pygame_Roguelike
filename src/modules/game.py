@@ -10,6 +10,7 @@ from .save_system import SaveSystem
 from .resource_manager import resource_manager
 from .upgrade_system import UpgradeManager, WeaponUpgradeLevel, PassiveUpgradeLevel
 from .utils import apply_mask_collision
+from .map_manager import MapManager
 
 class Game:
     def __init__(self, screen):
@@ -39,6 +40,7 @@ class Game:
         self.item_manager = None
         self.save_system = SaveSystem()
         self.upgrade_manager = UpgradeManager()
+        self.map_manager = MapManager(screen)  # 创建地图管理器
         
         # 创建UI和菜单
         self.ui = UI(screen)
@@ -54,11 +56,17 @@ class Game:
         self.kill_num = 0 # 击杀数
         self.level = 1
         
+        # 地图状态
+        self.current_map = None  # 当前地图名称
+        
     def start_new_game(self):
         """开始新游戏，重置所有游戏状态"""
         self.in_main_menu = False
         self.game_over = False
         self.paused = False
+        
+        # 加载地图
+        self.load_map("simple_map")
         
         # 创建新的玩家
         self.player = Player(self.screen_center_x, self.screen_center_y)
@@ -80,6 +88,29 @@ class Game:
         # 播放背景音乐
         resource_manager.play_music("background", loops=-1)
         
+    def load_map(self, map_name):
+        """加载指定名称的地图"""
+        success = self.map_manager.load_map(map_name)
+        if success:
+            self.current_map = map_name
+            
+            # 获取地图尺寸
+            map_width, map_height = self.map_manager.get_map_size()
+            
+            # 根据地图尺寸设置玩家的起始位置和边界
+            if self.player:
+                # 可以根据地图设置玩家的起始位置或其他属性
+                pass
+            
+            # 获取碰撞图块
+            # self.map_collision_rects = self.map_manager.get_collision_tiles()
+            
+            print(f"地图 '{map_name}' 已加载，尺寸: {map_width}x{map_height}")
+        else:
+            print(f"加载地图 '{map_name}' 失败")
+            
+        return success
+
     def load_game_state(self, save_data):
         """从存档数据中加载游戏状态"""
         try:
@@ -436,7 +467,10 @@ class Game:
             
     def render(self):
         """渲染游戏画面"""
-        # 如果在主菜单中
+        # 清屏
+        self.screen.fill((0, 0, 0))  # 黑色背景
+        
+        # 如果在主菜单
         if self.in_main_menu:
             # 如果读取菜单激活，只渲染读取菜单
             if self.load_menu.is_active:
@@ -447,11 +481,19 @@ class Game:
             pygame.display.flip()
             return
             
-        # 绘制背景
-        self.screen.fill((0, 0, 0))
-        
-        # 绘制网格
-        self._draw_grid()
+        # 如果正在保存游戏
+        if self.save_menu.is_active:
+            self.save_menu.render()
+            return
+            
+        # 绘制地图（如果已加载）
+        # FIXME: 地图显示逻辑还有问题
+        # if self.current_map:
+        if False:
+            self.map_manager.render(self.camera_x, self.camera_y)
+        else:
+            # 如果没有地图，绘制网格作为背景
+            self._draw_grid()
         
         # 渲染游戏对象（考虑相机偏移）
         self.enemy_manager.render(self.screen, self.camera_x, self.camera_y, 
@@ -537,7 +579,7 @@ class Game:
                                 
                             if should_destroy:
                                 projectile.kill()
-                            
+        
         # 检测玩家和敌人的碰撞
         for enemy in self.enemy_manager.enemies:
             if not self.player.invincible:  # 只在玩家不处于无敌状态时检测碰撞
@@ -546,6 +588,12 @@ class Game:
                 player_rect.centerx = self.player.world_x
                 player_rect.centery = self.player.world_y
                 
+                # 对于Slime等远程攻击敌人，即使不直接碰撞也需要触发attack_player
+                # 这样才能正确生成投射物并处理碰撞逻辑
+                if hasattr(enemy, 'projectiles'):
+                    enemy.attack_player(self.player)
+                
+                # 对于直接碰撞的敌人，进行常规碰撞检测
                 if player_rect.colliderect(enemy.rect):
                     # 进行像素级碰撞检测
                     if apply_mask_collision(self.player, enemy):
