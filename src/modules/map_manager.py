@@ -37,35 +37,17 @@ class MapManager:
         """
         # 构建地图文件的完整路径
         map_path = os.path.join(resource_manager.resource_dir, "maps", f"{map_name}.tmx")
-        print("load map from {}".format(map_path))
         
         try:
             # 使用pytmx.util_pygame直接加载TMX文件
             try:
                 self.tmx_data = load_pygame(map_path)
-                print(f"TMX文件加载成功，图层数量: {len(self.tmx_data.layers)}")
-                
-                # 输出图块集信息
-                print("\n图块集信息:")
-                for i, tileset in enumerate(self.tmx_data.tilesets):
-                    print(f"图块集 {i+1}:")
-                    print(f"  首GID: {tileset.firstgid}")
-                    print(f"  名称: {tileset.name}")
-                    if hasattr(tileset, 'source') and tileset.source:
-                        print(f"  源文件: {tileset.source}")
-                        # 检查源文件是否存在
-                        source_path = os.path.join(os.path.dirname(map_path), tileset.source)
-                        print(f"  源文件完整路径: {source_path}")
-                        print(f"  源文件是否存在: {os.path.exists(source_path)}")
                 
                 # 获取地图尺寸
                 self.tile_width = self.tmx_data.tilewidth
                 self.tile_height = self.tmx_data.tileheight
                 self.map_width = self.tmx_data.width * self.tile_width
                 self.map_height = self.tmx_data.height * self.tile_height
-                
-                print(f"\n地图尺寸: {self.map_width}x{self.map_height} 像素")
-                print(f"图块尺寸: {self.tile_width}x{self.tile_height} 像素")
                 
                 # 存储地图数据
                 self.current_map = {
@@ -93,15 +75,12 @@ class MapManager:
                     
                     # 创建地图精灵组
                     self.map_group = pyscroll.PyscrollGroup(map_layer=self.map_layer)
-                    print("成功创建pyscroll渲染器")
                     self.use_direct_render = False
                 except Exception as e:
-                    print(f"创建pyscroll渲染器失败，将使用优化的直接渲染: {e}")
                     self.map_layer = None
                     self.map_group = None
                     self.use_direct_render = True
                 
-                print(f"地图 '{map_name}' 加载成功")
                 return True
                 
             except Exception as e:
@@ -133,21 +112,21 @@ class MapManager:
                             if tile:
                                 self.tile_cache[gid] = tile
         
-        print(f"已缓存 {len(self.tile_cache)} 个不同的图块")
     
-    def _calculate_visible_tiles(self, camera_x, camera_y):
+    def _calculate_visible_tiles(self, offset_x, offset_y):
         """计算当前视口内可见的图块
         
         Args:
-            camera_x: 相机X位置（实际是负的偏移量）
-            camera_y: 相机Y位置（实际是负的偏移量）
+            offset_x: 相机X位置的偏移量
+            offset_y: 相机Y位置的偏移量
         """
         if not self.tmx_data:
             return
         
         # 计算视口边界（以图块为单位）
-        viewport_left = max(0, int(-camera_x / self.tile_width))
-        viewport_top = max(0, int(-camera_y / self.tile_height))
+        # 使用偏移量计算起始位置
+        viewport_left = max(0, int(-offset_x / self.tile_width))
+        viewport_top = max(0, int(-offset_y / self.tile_height))
         
         # 计算视口右下角，多加几个图块确保覆盖整个屏幕
         viewport_right = min(
@@ -174,8 +153,8 @@ class MapManager:
                             tile = self.tile_cache.get(gid)
                             if tile:
                                 # 计算屏幕坐标
-                                pos_x = x * self.tile_width + camera_x
-                                pos_y = y * self.tile_height + camera_y
+                                pos_x = x * self.tile_width + offset_x
+                                pos_y = y * self.tile_height + offset_y
                                 layer_tiles.append((tile, pos_x, pos_y))
                 
                 self.visible_tiles.append(layer_tiles)
@@ -187,6 +166,10 @@ class MapManager:
             camera_x: 相机在世界坐标系中的X位置
             camera_y: 相机在世界坐标系中的Y位置
         """
+        # 计算相机偏移量 - 将世界中心移动到屏幕中心
+        offset_x = self.screen.get_width() // 2 - camera_x
+        offset_y = self.screen.get_height() // 2 - camera_y
+        
         # 使用pyscroll渲染
         if self.map_layer and self.map_group and not self.use_direct_render:
             try:
@@ -203,9 +186,9 @@ class MapManager:
         # 优化的直接渲染
         if self.tmx_data:
             # 检查相机是否移动，如果移动了才重新计算可见图块
-            if self.last_camera_pos != (camera_x, camera_y):
-                self._calculate_visible_tiles(camera_x, camera_y)
-                self.last_camera_pos = (camera_x, camera_y)
+            if self.last_camera_pos != (offset_x, offset_y):
+                self._calculate_visible_tiles(offset_x, offset_y)
+                self.last_camera_pos = (offset_x, offset_y)
             
             # 绘制所有可见图块
             for layer_tiles in self.visible_tiles:

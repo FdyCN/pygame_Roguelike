@@ -59,29 +59,75 @@ class Game:
         # 地图状态
         self.current_map = None  # 当前地图名称
         
+    def _set_map_boundaries(self):
+        """根据当前地图尺寸设置边界
+        
+        设置玩家的移动边界和敌人的生成边界
+        """
+        if not self.current_map:
+            return
+            
+        # 获取地图尺寸
+        map_width, map_height = self.map_manager.get_map_size()
+        
+        # 计算围栏宽度（两排32x32的围栏）
+        fence_width = 2 * 32
+        
+        # 计算边界
+        min_x = fence_width
+        min_y = fence_width
+        max_x = map_width - fence_width
+        max_y = map_height - fence_width
+        
+        # 设置玩家移动边界
+        if self.player:
+            self.player.movement.set_boundaries(min_x, min_y, max_x, max_y)
+            
+        # 设置敌人生成边界
+        if self.enemy_manager:
+            self.enemy_manager.set_map_boundaries(min_x, min_y, max_x, max_y)
+            
+    def _set_player_boundaries(self):
+        """设置玩家的移动边界
+        
+        根据当前地图的尺寸和围栏宽度设置玩家的移动边界
+        """
+        # 使用通用的边界设置方法
+        self._set_map_boundaries()
+        
     def start_new_game(self):
         """开始新游戏，重置所有游戏状态"""
         self.in_main_menu = False
         self.game_over = False
         self.paused = False
         
-        # 加载地图
+        # 先加载地图
         self.load_map("simple_map")
         
-        # 创建新的玩家
+        # 获取地图尺寸
+        map_width, map_height = self.map_manager.get_map_size()
+        
+        # 创建新的玩家在地图中心
         self.player = Player(self.screen_center_x, self.screen_center_y)
+        
+        # 设置玩家的世界坐标为地图中心
+        self.player.world_x = map_width // 2
+        self.player.world_y = map_height // 2
         
         # 初始化游戏管理器
         self.enemy_manager = EnemyManager()
         self.enemy_manager.set_difficulty("normal")  # 设置初始难度
         self.item_manager = ItemManager()
         
+        # 设置边界
+        self._set_map_boundaries()
+        
         # 重置游戏状态
         self.game_time = 0
         self.kill_num = 0
         self.level = 1
         
-        # 重置相机位置
+        # 设置相机位置为玩家位置
         self.camera_x = self.player.world_x
         self.camera_y = self.player.world_y
         
@@ -99,13 +145,17 @@ class Game:
             
             # 根据地图尺寸设置玩家的起始位置和边界
             if self.player:
-                # 可以根据地图设置玩家的起始位置或其他属性
-                pass
+                # 将玩家放置在地图中心
+                self.player.world_x = map_width // 2
+                self.player.world_y = map_height // 2
+                
+                # 更新相机位置跟随玩家
+                self.camera_x = self.player.world_x
+                self.camera_y = self.player.world_y
+                
+                # 设置玩家和敌人边界
+                self._set_map_boundaries()
             
-            # 获取碰撞图块
-            # self.map_collision_rects = self.map_manager.get_collision_tiles()
-            
-            print(f"地图 '{map_name}' 已加载，尺寸: {map_width}x{map_height}")
         else:
             print(f"加载地图 '{map_name}' 失败")
             
@@ -246,6 +296,9 @@ class Game:
             # 设置相机位置
             self.camera_x = self.player.world_x
             self.camera_y = self.player.world_y
+            
+            # 设置边界
+            self._set_map_boundaries()
             
             # 播放背景音乐
             resource_manager.play_music("background", loops=-1)
@@ -440,6 +493,10 @@ class Game:
         # 更新玩家位置（在世界坐标系中）
         self.player.update(dt)
         
+        # 边界检测已在MovementComponent中处理
+        # 如果需要，可以作为额外的保障措施
+        # self._set_player_boundaries()
+        
         # 更新相机位置（跟随玩家）
         self.camera_x = self.player.world_x
         self.camera_y = self.player.world_y
@@ -487,9 +544,7 @@ class Game:
             return
             
         # 绘制地图（如果已加载）
-        # FIXME: 地图显示逻辑还有问题
-        # if self.current_map:
-        if False:
+        if self.current_map:
             self.map_manager.render(self.camera_x, self.camera_y)
         else:
             # 如果没有地图，绘制网格作为背景

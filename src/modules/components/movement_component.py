@@ -40,6 +40,21 @@ class MovementComponent(Component):
         self.current_direction = 'right'  # 当前移动方向文本描述
         self.facing_right = True
         
+        # 边界检测
+        self.boundaries = None  # (min_x, min_y, max_x, max_y)
+        
+    def set_boundaries(self, min_x, min_y, max_x, max_y):
+        """
+        设置移动边界
+        
+        Args:
+            min_x: 最小X坐标
+            min_y: 最小Y坐标
+            max_x: 最大X坐标
+            max_y: 最大Y坐标
+        """
+        self.boundaries = (min_x, min_y, max_x, max_y)
+        
     def handle_event(self, event):
         """
         处理移动相关的输入事件
@@ -88,8 +103,17 @@ class MovementComponent(Component):
         
         # 更新实体位置
         if hasattr(self.owner, 'world_x') and hasattr(self.owner, 'world_y'):
-            self.owner.world_x += self.velocity.x * dt
-            self.owner.world_y += self.velocity.y * dt
+            new_x = self.owner.world_x + self.velocity.x * dt
+            new_y = self.owner.world_y + self.velocity.y * dt
+            
+            # 应用边界检测
+            if self.boundaries:
+                min_x, min_y, max_x, max_y = self.boundaries
+                new_x = max(min_x, min(new_x, max_x))
+                new_y = max(min_y, min(new_y, max_y))
+            
+            self.owner.world_x = new_x
+            self.owner.world_y = new_y
     
     def _update_movement_direction(self):
         """更新移动方向和对应的角度"""

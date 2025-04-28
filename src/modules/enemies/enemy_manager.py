@@ -13,6 +13,20 @@ class EnemyManager:
         self.game_time = 0  # 游戏进行时间
         self.bat_spawn_timer = 0  # 蝙蝠生成计时器
         
+        # 地图边界相关
+        self.map_boundaries = None  # (min_x, min_y, max_x, max_y)
+        
+    def set_map_boundaries(self, min_x, min_y, max_x, max_y):
+        """设置地图边界
+        
+        Args:
+            min_x: 最小X坐标
+            min_y: 最小Y坐标
+            max_x: 最大X坐标
+            max_y: 最大Y坐标
+        """
+        self.map_boundaries = (min_x, min_y, max_x, max_y)
+        
     def spawn_enemy(self, enemy_type, x, y, health=None):
         """在指定位置生成指定类型和生命值的敌人
         
@@ -100,16 +114,31 @@ class EnemyManager:
             self.enemies.remove(enemy)
             
     def random_spawn_enemy(self, player):
-        """在玩家周围随机位置生成敌人"""
-        # 在玩家周围的屏幕外随机位置生成敌人
+        """在玩家周围随机位置生成敌人，确保在地图边界内"""
+        # 在玩家周围的随机位置生成敌人
         spawn_distance = 600  # 生成距离
         
-        # 随机角度
-        angle = random.uniform(0, 2 * math.pi)
-        
-        # 计算生成位置（世界坐标系）
-        x = player.world_x + spawn_distance * math.cos(angle)
-        y = player.world_y + spawn_distance * math.sin(angle)
+        # 尝试生成位置，最多尝试10次以找到在边界内的位置
+        for _ in range(10):
+            # 随机角度
+            angle = random.uniform(0, 2 * math.pi)
+            
+            # 计算生成位置（世界坐标系）
+            x = player.world_x + spawn_distance * math.cos(angle)
+            y = player.world_y + spawn_distance * math.sin(angle)
+            
+            # 如果有地图边界限制，确保敌人在边界内生成
+            if self.map_boundaries:
+                min_x, min_y, max_x, max_y = self.map_boundaries
+                
+                # 检查生成位置是否在边界内
+                if min_x <= x <= max_x and min_y <= y <= max_y:
+                    break  # 位置有效，跳出循环
+                
+                # 如果位置无效，将坐标限制在边界内
+                x = max(min_x, min(x, max_x))
+                y = max(min_y, min(y, max_y))
+                break  # 使用修正后的位置
         
         # 根据游戏时间决定生成什么类型的敌人
         if self.game_time < 10:  # 游戏开始10秒内
@@ -127,9 +156,26 @@ class EnemyManager:
         self.difficulty = difficulty
             
     def spawn_bat(self, player):
-        """在玩家周围生成一个蝙蝠"""
+        """在玩家周围生成一个蝙蝠，确保在地图边界内"""
         spawn_distance = 600
-        angle = random.uniform(0, 2 * math.pi)
-        x = player.world_x + spawn_distance * math.cos(angle)
-        y = player.world_y + spawn_distance * math.sin(angle)
+        
+        # 尝试生成位置，最多尝试10次以找到在边界内的位置
+        for _ in range(10):
+            angle = random.uniform(0, 2 * math.pi)
+            x = player.world_x + spawn_distance * math.cos(angle)
+            y = player.world_y + spawn_distance * math.sin(angle)
+            
+            # 如果有地图边界限制，确保蝙蝠在边界内生成
+            if self.map_boundaries:
+                min_x, min_y, max_x, max_y = self.map_boundaries
+                
+                # 检查生成位置是否在边界内
+                if min_x <= x <= max_x and min_y <= y <= max_y:
+                    break  # 位置有效，跳出循环
+                
+                # 如果位置无效，将坐标限制在边界内
+                x = max(min_x, min(x, max_x))
+                y = max(min_y, min(y, max_y))
+                break  # 使用修正后的位置
+        
         self.spawn_enemy('bat', x, y) 
