@@ -11,6 +11,7 @@ from .resource_manager import resource_manager
 from .upgrade_system import UpgradeManager, WeaponUpgradeLevel, PassiveUpgradeLevel
 from .utils import apply_mask_collision
 from .map_manager import MapManager
+from .menus.map_hero_select_menu import MapHeroSelectMenu
 
 class Game:
     def __init__(self, screen):
@@ -19,6 +20,7 @@ class Game:
         self.paused = False
         self.game_over = False
         self.in_main_menu = True  # 是否在主菜单
+        self.in_map_hero_select = False  # 是否在地图和英雄选择界面
         
         # 获取屏幕中心点
         self.screen_center_x = self.screen.get_width() // 2
@@ -50,6 +52,13 @@ class Game:
         self.upgrade_menu = UpgradeMenu(screen)
         self.save_menu = SaveMenu(screen, True)  # 保存菜单
         self.load_menu = SaveMenu(screen, False)  # 读取菜单
+        
+        # 创建地图和英雄选择菜单
+        self.map_hero_select_menu = MapHeroSelectMenu(
+            screen,
+            on_start_game=self._start_game_with_selection,
+            on_back=self._back_to_main_menu
+        )
         
         # 游戏状态
         self.game_time = 0
@@ -95,20 +104,25 @@ class Game:
         # 使用通用的边界设置方法
         self._set_map_boundaries()
         
-    def start_new_game(self):
-        """开始新游戏，重置所有游戏状态"""
-        self.in_main_menu = False
+    def _start_game_with_selection(self, map_id, hero_id):
+        """根据选择的地图和英雄开始新游戏
+        
+        Args:
+            map_id: 地图ID
+            hero_id: 英雄ID
+        """
+        self.in_map_hero_select = False
         self.game_over = False
         self.paused = False
         
-        # 先加载地图
-        self.load_map("simple_map")
+        # 加载选中的地图
+        self.load_map(map_id)
         
         # 获取地图尺寸
         map_width, map_height = self.map_manager.get_map_size()
         
         # 创建新的玩家在地图中心
-        self.player = Player(self.screen_center_x, self.screen_center_y)
+        self.player = Player(self.screen_center_x, self.screen_center_y, hero_id)
         
         # 设置玩家的世界坐标为地图中心
         self.player.world_x = map_width // 2
@@ -134,6 +148,17 @@ class Game:
         # 播放背景音乐
         resource_manager.play_music("background", loops=-1)
         
+    def _back_to_main_menu(self):
+        """从地图和英雄选择界面返回主菜单"""
+        self.in_map_hero_select = False
+        self.in_main_menu = True
+        
+    def start_new_game(self):
+        """显示地图和英雄选择界面"""
+        self.in_main_menu = False
+        self.in_map_hero_select = True
+        self.map_hero_select_menu.show()
+            
     def load_map(self, map_name):
         """加载指定名称的地图"""
         success = self.map_manager.load_map(map_name)
@@ -312,6 +337,12 @@ class Game:
             return False
         
     def handle_event(self, event):
+        # 如果在地图和英雄选择界面
+        if self.in_map_hero_select:
+            result = self.map_hero_select_menu.handle_event(event)
+            # 不需要处理返回值，因为已经在回调函数中处理了
+            return
+            
         # 如果在主菜单中
         if self.in_main_menu:
             # 如果读取菜单激活，优先处理读取菜单事件
@@ -331,7 +362,6 @@ class Game:
             action = self.main_menu.handle_event(event)
             if action == "start":
                 self.start_new_game()
-                self.in_main_menu = False
             elif action == "load":
                 print("显示读取菜单")  # 调试信息
                 self.load_menu.show()
@@ -471,6 +501,10 @@ class Game:
         if self.in_main_menu:
             return
             
+        # 如果在地图和英雄选择界面，只更新菜单，不更新游戏逻辑
+        if self.in_map_hero_select:
+            return
+            
         # 检查玩家是否死亡
         if self.player and self.player.health <= 0 and not self.game_over:
             self.game_over = True
@@ -490,38 +524,46 @@ class Game:
             
         self.game_time += dt
         
-        # 更新玩家位置（在世界坐标系中）
-        self.player.update(dt)
-        
-        # 边界检测已在MovementComponent中处理
-        # 如果需要，可以作为额外的保障措施
-        # self._set_player_boundaries()
-        
-        # 更新相机位置（跟随玩家）
-        self.camera_x = self.player.world_x
-        self.camera_y = self.player.world_y
-        
-        # 处理被状态效果（如燃烧）导致死亡的敌人
-        for enemy in list(self.enemy_manager.enemies):  # 使用列表复制避免在迭代时修改
-            if enemy in self.enemy_manager.enemies and not enemy.alive():
-                self.kill_num += 1
-                # 在敌人死亡位置生成物品，传递player对象以应用幸运值加成
-                self.item_manager.spawn_item(enemy.rect.x, enemy.rect.y, enemy.type, self.player)
-                # 敌人已经在enemy_manager.update()中被移除，无需再次移除
-        
-        # 更新其他游戏对象
-        self.enemy_manager.update(dt, self.player)
-        self.player.update_weapons(dt, self.enemy_manager.enemies)
-        self.item_manager.update(dt, self.player)
-        
-        # 检测碰撞
-        self._check_collisions()
-        
-        # 检查是否可以升级
-        if self.player.add_experience(0):  # 检查是否可以升级，不添加经验值
-            self.player.level_up()
-            self.upgrade_menu.show(self.player, self)  # 显示升级选择菜单，传入Game实例
+        # 确保玩家对象存在再更新
+        if self.player:
+            # 更新玩家位置（在世界坐标系中）
+            self.player.update(dt)
             
+            # 边界检测已在MovementComponent中处理
+            # 如果需要，可以作为额外的保障措施
+            # self._set_map_boundaries()
+            
+            # 更新相机位置（跟随玩家）
+            self.camera_x = self.player.world_x
+            self.camera_y = self.player.world_y
+        
+        # 更新其他游戏对象，注意检查player和enemy_manager是否存在
+        if self.enemy_manager and self.player:
+            # 处理被状态效果（如燃烧）导致死亡的敌人
+            for enemy in list(self.enemy_manager.enemies):  # 使用列表复制避免在迭代时修改
+                if enemy in self.enemy_manager.enemies and not enemy.alive():
+                    self.kill_num += 1
+                    # 在敌人死亡位置生成物品，传递player对象以应用幸运值加成
+                    if self.item_manager:
+                        self.item_manager.spawn_item(enemy.rect.x, enemy.rect.y, enemy.type, self.player)
+                    # 敌人已经在enemy_manager.update()中被移除，无需再次移除
+            
+            # 更新敌人和武器
+            self.enemy_manager.update(dt, self.player)
+            self.player.update_weapons(dt, self.enemy_manager.enemies)
+            
+            # 更新物品
+            if self.item_manager:
+                self.item_manager.update(dt, self.player)
+            
+            # 检测碰撞
+            self._check_collisions()
+            
+            # 检查是否可以升级
+            if self.player.add_experience(0):  # 检查是否可以升级，不添加经验值
+                self.player.level_up()
+                self.upgrade_menu.show(self.player, self)  # 显示升级选择菜单，传入Game实例
+        
     def render(self):
         """渲染游戏画面"""
         # 清屏
@@ -538,6 +580,12 @@ class Game:
             pygame.display.flip()
             return
             
+        # 如果在地图和英雄选择界面
+        if self.in_map_hero_select:
+            self.map_hero_select_menu.render()
+            pygame.display.flip()
+            return
+            
         # 如果正在保存游戏
         if self.save_menu.is_active:
             self.save_menu.render()
@@ -550,19 +598,22 @@ class Game:
             # 如果没有地图，绘制网格作为背景
             self._draw_grid()
         
-        # 渲染游戏对象（考虑相机偏移）
-        self.enemy_manager.render(self.screen, self.camera_x, self.camera_y, 
-                                self.screen_center_x, self.screen_center_y)
-        self.item_manager.render(self.screen, self.camera_x, self.camera_y, 
-                               self.screen_center_x, self.screen_center_y)
+        # 确保游戏对象存在再渲染
+        if self.enemy_manager:
+            # 渲染游戏对象（考虑相机偏移）
+            self.enemy_manager.render(self.screen, self.camera_x, self.camera_y, 
+                                   self.screen_center_x, self.screen_center_y)
+        
+        if self.item_manager:
+            self.item_manager.render(self.screen, self.camera_x, self.camera_y, 
+                                  self.screen_center_x, self.screen_center_y)
         
         # 渲染玩家（始终在屏幕中心）
         if self.player:
             self.player.render(self.screen)
-        
-        self.player.render_weapons(self.screen, self.camera_x, self.camera_y)
-        # 渲染UI
-        if self.player:
+            self.player.render_weapons(self.screen, self.camera_x, self.camera_y)
+            
+            # 渲染UI
             self.ui.render(self.player, self.game_time, self.kill_num)
             
         # 如果游戏暂停，渲染暂停菜单
@@ -601,6 +652,10 @@ class Game:
         
     def _check_collisions(self):
         """检测碰撞"""
+        # 确保玩家和敌人管理器存在
+        if not self.player or not self.enemy_manager:
+            return
+            
         # 检测武器碰撞
         for weapon in self.player.weapons:
             for projectile in weapon.get_projectiles():
@@ -627,7 +682,8 @@ class Game:
                             if enemy.health <= 0:
                                 self.kill_num += 1
                                 # 在敌人死亡位置生成物品，传递player对象以应用幸运值加成
-                                self.item_manager.spawn_item(enemy.rect.x, enemy.rect.y, enemy.type, self.player)
+                                if self.item_manager:
+                                    self.item_manager.spawn_item(enemy.rect.x, enemy.rect.y, enemy.type, self.player)
                                 self.enemy_manager.remove_enemy(enemy)
                                 # 播放敌人死亡音效
                                 resource_manager.play_sound("enemy_death")
@@ -668,4 +724,7 @@ class Game:
             
         # 更新等级和难度
         self.level = current_level
-        self.enemy_manager.difficulty_level = self.level  # 更新敌人管理器中的难度等级 
+        
+        # 确保敌人管理器存在再更新难度
+        if self.enemy_manager:
+            self.enemy_manager.difficulty_level = self.level  # 更新敌人管理器中的难度等级 
